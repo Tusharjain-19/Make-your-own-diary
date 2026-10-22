@@ -24,7 +24,11 @@ import {
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { themes, layouts } from "@/lib/themes";
 
+import Link from "next/link";
+import { useAuth } from "@/lib/auth/auth-context";
+
 export default function StarterPage() {
+  const { user } = useAuth();
   const [testInput, setTestInput] = React.useState("Jaipur Trip 2026");
   const [dialogOpen, setDialogOpen] = React.useState(false);
 
@@ -33,20 +37,37 @@ export default function StarterPage() {
       {/* Top Navigation */}
       <header className="sticky top-0 z-40 border-b border-border bg-surface/80 backdrop-blur-md">
         <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-6">
-          <div className="flex items-center gap-2.5">
+          <Link href="/" className="flex items-center gap-2.5">
             <div className="flex h-8 w-8 items-center justify-center rounded-[8px] bg-accent text-white">
               <BookOpen className="h-4 w-4" />
             </div>
             <span className="font-serif text-lg font-semibold tracking-tight text-accent">
               Storybound
             </span>
-          </div>
+          </Link>
 
           <div className="flex items-center gap-3">
             <span className="rounded-full border border-border bg-accent-soft px-3 py-1 text-xs font-medium text-text-muted">
-              Day 1 Foundation Ready
+              Day 2 Auth & RLS Ready
             </span>
-            <Button size="sm">Get Started</Button>
+            {user ? (
+              <Link href="/dashboard">
+                <Button size="sm">Dashboard ({user.name.split(" ")[0]})</Button>
+              </Link>
+            ) : (
+              <>
+                <Link href="/login">
+                  <Button variant="ghost" size="sm" className="text-xs">
+                    Sign In
+                  </Button>
+                </Link>
+                <Link href="/signup">
+                  <Button size="sm" className="text-xs">
+                    Get Started
+                  </Button>
+                </Link>
+              </>
+            )}
           </div>
         </div>
       </header>
