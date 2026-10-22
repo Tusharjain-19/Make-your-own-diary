@@ -141,10 +141,10 @@ function WizardForm() {
   };
 
   return (
-    <div className="min-h-screen bg-bg text-text">
+    <div className="min-h-screen bg-bg text-text overflow-x-hidden">
       {/* Top Bar */}
       <header className="sticky top-0 z-40 border-b border-border bg-surface/80 backdrop-blur-md">
-        <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-6">
+        <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-4 sm:px-6">
           <div className="flex items-center gap-3">
             <Link href="/dashboard" className="flex items-center gap-2">
               <div className="flex h-8 w-8 items-center justify-center rounded-[8px] bg-accent text-white">
@@ -166,7 +166,7 @@ function WizardForm() {
       </header>
 
       {/* Main Container */}
-      <main className="mx-auto max-w-4xl px-6 py-10">
+      <main className="mx-auto max-w-4xl px-4 sm:px-6 py-8 sm:py-10">
         {/* Step Indicator Header */}
         <div className="mb-8">
           <div className="flex items-center justify-between text-xs font-mono text-text-muted mb-2">

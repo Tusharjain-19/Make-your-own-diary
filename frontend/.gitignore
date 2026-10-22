@@ -1,5 +1,5 @@
 # dependencies
-node_modules
+node_modules/
 .pnp
 .pnp.js
 .yarn/install-state.gz
@@ -34,3 +34,7 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Markdown files (only README.md tracked if any)
+*.md
+!README.md

@@ -11,9 +11,9 @@ export default function OrdersPage() {
   const { user } = useAuth();
 
   return (
-    <div className="min-h-screen bg-bg text-text">
+    <div className="min-h-screen bg-bg text-text overflow-x-hidden">
       <header className="sticky top-0 z-40 border-b border-border bg-surface/80 backdrop-blur-md">
-        <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-6">
+        <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4 sm:px-6">
           <div className="flex items-center gap-3">
             <Link href="/dashboard" className="flex items-center gap-2">
               <div className="flex h-8 w-8 items-center justify-center rounded-[8px] bg-accent text-white">
@@ -34,7 +34,7 @@ export default function OrdersPage() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-4xl px-6 py-12">
+      <main className="mx-auto max-w-4xl px-4 sm:px-6 py-8 sm:py-12">
         <div className="mb-8">
           <h1 className="font-serif text-3xl font-medium tracking-tight text-text">
             My Hardcover Orders

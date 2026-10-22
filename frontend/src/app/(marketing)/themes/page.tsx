@@ -12,10 +12,10 @@ export default function ThemesGalleryPage() {
   const { user } = useAuth();
 
   return (
-    <div className="min-h-screen bg-bg text-text selection:bg-accent-soft selection:text-text">
+    <div className="min-h-screen bg-bg text-text selection:bg-accent-soft selection:text-text overflow-x-hidden">
       {/* Top Navigation */}
       <header className="sticky top-0 z-50 border-b border-border bg-surface/85 backdrop-blur-md">
-        <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-6">
+        <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4 sm:px-6">
           <div className="flex items-center gap-3">
             <Link href="/" className="flex items-center gap-2.5">
               <div className="flex h-8 w-8 items-center justify-center rounded-[8px] bg-accent text-white shadow-sm">
@@ -48,7 +48,7 @@ export default function ThemesGalleryPage() {
       </header>
 
       {/* Header Banner */}
-      <main className="mx-auto max-w-6xl px-6 py-12">
+      <main className="mx-auto max-w-6xl px-4 sm:px-6 py-8 sm:py-12">
         <div className="max-w-2xl mb-12">
           <div className="mb-2 inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-text-muted">
             <Palette className="h-3.5 w-3.5 text-accent" />

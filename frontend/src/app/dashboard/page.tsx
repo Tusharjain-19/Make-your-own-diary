@@ -27,14 +27,15 @@ import {
 } from "@/components/ui/dialog";
 import { useAuth, BookSummary } from "@/lib/auth/auth-context";
 import { getThemeById } from "@/lib/themes";
+import { useToast } from "@/components/ui/toast";
 
 export default function DashboardPage() {
   const router = useRouter();
   const { user, logout, getUserBooks, duplicateBook, deleteBook, login } = useAuth();
+  const { showToast } = useToast();
 
   const [books, setBooks] = React.useState<BookSummary[]>([]);
   const [deleteCandidate, setDeleteCandidate] = React.useState<BookSummary | null>(null);
-  const [actionNotice, setActionNotice] = React.useState<string | null>(null);
 
   // Load books for currently logged-in user
   const reloadBooks = React.useCallback(() => {
@@ -50,8 +51,7 @@ export default function DashboardPage() {
   const handleDuplicate = (bookId: string) => {
     const copy = duplicateBook(bookId);
     if (copy) {
-      setActionNotice(`Created duplicate: "${copy.title}"`);
-      setTimeout(() => setActionNotice(null), 3000);
+      showToast("success", `Created duplicate: "${copy.title}"`);
       reloadBooks();
     }
   };
@@ -59,8 +59,7 @@ export default function DashboardPage() {
   const confirmDelete = () => {
     if (deleteCandidate) {
       deleteBook(deleteCandidate.id);
-      setActionNotice(`Deleted "${deleteCandidate.title}"`);
-      setTimeout(() => setActionNotice(null), 3000);
+      showToast("success", `Deleted "${deleteCandidate.title}"`);
       setDeleteCandidate(null);
       reloadBooks();
     }
@@ -80,10 +79,10 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-bg text-text selection:bg-accent-soft selection:text-text">
+    <div className="min-h-screen bg-bg text-text selection:bg-accent-soft selection:text-text overflow-x-hidden">
       {/* Top Header */}
       <header className="sticky top-0 z-40 border-b border-border bg-surface/80 backdrop-blur-md">
-        <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-6">
+        <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4 sm:px-6">
           <div className="flex items-center gap-3">
             <Link href="/" className="flex items-center gap-2">
               <div className="flex h-8 w-8 items-center justify-center rounded-[8px] bg-accent text-white">
@@ -111,13 +110,7 @@ export default function DashboardPage() {
       </header>
 
       {/* Main Container */}
-      <main className="mx-auto max-w-6xl px-6 py-10">
-        {/* Action notification toast */}
-        {actionNotice && (
-          <div className="mb-6 rounded-[8px] border border-accent/20 bg-accent text-white px-4 py-2.5 text-xs shadow-md animate-in fade-in duration-200">
-            {actionNotice}
-          </div>
-        )}
+      <main className="mx-auto max-w-6xl px-4 sm:px-6 py-8 sm:py-10">
 
         {/* RLS Multi-User Security Demonstration Card */}
         <div className="mb-8 rounded-[10px] border border-border bg-surface p-5 shadow-sm">

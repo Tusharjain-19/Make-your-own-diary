@@ -1,5 +1,6 @@
 # dependencies
-node_modules
+node_modules/
+**/node_modules/
 .pnp
 .pnp.js
 .yarn/install-state.gz
@@ -9,6 +10,7 @@ coverage
 
 # next.js
 .next/
+**/.next/
 out/
 
 # production
@@ -34,3 +36,8 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Documentation & Markdown files (only README.md is committed and pushed)
+docs/
+*.md
+!README.md
