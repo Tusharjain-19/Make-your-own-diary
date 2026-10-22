@@ -3,32 +3,249 @@
 import * as React from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import {
-  BookOpen,
-  ArrowLeft,
-  CheckCircle2,
-  Sliders,
-  Layers,
-  Palette,
-  Eye,
-  Download,
-} from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth/auth-context";
 import { getThemeById } from "@/lib/themes";
+import { useEditorStore, createSamplePageElements } from "@/lib/editor/store";
+import { PageSize, El } from "@/lib/editor/types";
+import dynamic from "next/dynamic";
+import { TopBar } from "@/components/editor/TopBar";
+import { LeftRail } from "@/components/editor/LeftRail";
+import { PropertiesPanel } from "@/components/editor/PropertiesPanel/PropertiesPanel";
+import { PageStrip } from "@/components/editor/PageStrip";
+
+const PageCanvas = dynamic(
+  () => import("@/components/editor/Canvas/PageCanvas"),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="flex h-full w-full items-center justify-center text-xs font-mono text-text-muted">
+        Loading canvas...
+      </div>
+    ),
+  }
+);
 
 export default function BookEditorPage() {
   const params = useParams();
   const bookId = params?.id as string;
 
-  const { user, getBookById, getBookPages } = useAuth();
-  const [activePageIndex, setActivePageIndex] = React.useState(0);
+  const { getBookById, getBookPages } = useAuth();
+  const {
+    book,
+    setBook,
+    deleteSelected,
+    duplicateSelected,
+    copySelected,
+    paste,
+    undo,
+    redo,
+    nudgeSelected,
+    deselectAll,
+    bringForward,
+    sendBackward,
+    bringToFront,
+    sendToBack,
+    setActiveTool,
+    saveToStorage,
+  } = useEditorStore();
 
-  const book = getBookById(bookId);
-  const pages = getBookPages(bookId);
-  const theme = book ? getThemeById(book.themeId) : undefined;
+  const [isInitialized, setIsInitialized] = React.useState(false);
 
-  if (!book) {
+  // Initialize store from Auth / LocalStorage book data
+  React.useEffect(() => {
+    if (!bookId || isInitialized) return;
+
+    const rawBook = getBookById(bookId);
+    if (!rawBook) return;
+
+    const rawPages = getBookPages(bookId);
+    const theme = getThemeById(rawBook.themeId);
+
+    // Format into BookModel
+    const pages = rawPages.map((p, idx) => {
+      let elements: El[] = (p.data?.elements || []) as El[];
+      // For Day 5 proof of concept: if first content page (page 1, index 1) is empty, populate sample elements
+      if (idx === 1 && elements.length === 0) {
+        elements = createSamplePageElements(theme?.fonts.heading || "Playfair Display");
+      }
+      return {
+        id: p.id || `p-${rawBook.id}-${p.position || idx + 1}`,
+        position: p.position || idx + 1,
+        bg:
+          p.data?.bg && !p.data.bg.startsWith("var(")
+            ? p.data.bg
+            : theme?.palette.bg || "#FAFAF8",
+        layoutId: p.data?.layoutId || (idx === 0 ? "L01" : "L02"),
+        elements,
+      };
+    });
+
+    setBook({
+      id: rawBook.id,
+      userId: rawBook.userId,
+      title: rawBook.title,
+      subtitle: rawBook.subtitle,
+      author: rawBook.author,
+      dates: rawBook.dates,
+      size: rawBook.size as PageSize,
+      themeId: rawBook.themeId,
+      status: rawBook.status,
+      pages,
+    });
+
+    setIsInitialized(true);
+  }, [bookId, isInitialized, getBookById, getBookPages, setBook]);
+
+  // Global Keyboard Shortcuts (from frontend.md and Day 6 prompt)
+  React.useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Ignore if user is typing in an input or textarea
+      const target = e.target as HTMLElement;
+      if (
+        target.tagName === "INPUT" ||
+        target.tagName === "TEXTAREA" ||
+        target.isContentEditable
+      ) {
+        return;
+      }
+
+      const isMac = navigator.platform.toUpperCase().indexOf("MAC") >= 0;
+      const cmdOrCtrl = isMac ? e.metaKey : e.ctrlKey;
+
+      // Undo: Ctrl/Cmd + Z
+      if (cmdOrCtrl && !e.shiftKey && e.key.toLowerCase() === "z") {
+        e.preventDefault();
+        undo();
+        return;
+      }
+
+      // Redo: Ctrl/Cmd + Y OR Ctrl/Cmd + Shift + Z
+      if (
+        (cmdOrCtrl && e.key.toLowerCase() === "y") ||
+        (cmdOrCtrl && e.shiftKey && e.key.toLowerCase() === "z")
+      ) {
+        e.preventDefault();
+        redo();
+        return;
+      }
+
+      // Duplicate: Ctrl/Cmd + D
+      if (cmdOrCtrl && e.key.toLowerCase() === "d") {
+        e.preventDefault();
+        duplicateSelected();
+        return;
+      }
+
+      // Copy: Ctrl/Cmd + C
+      if (cmdOrCtrl && e.key.toLowerCase() === "c") {
+        e.preventDefault();
+        copySelected();
+        return;
+      }
+
+      // Paste: Ctrl/Cmd + V
+      if (cmdOrCtrl && e.key.toLowerCase() === "v") {
+        e.preventDefault();
+        paste();
+        return;
+      }
+
+      // Delete: Delete or Backspace
+      if (e.key === "Delete" || e.key === "Backspace") {
+        e.preventDefault();
+        deleteSelected();
+        return;
+      }
+
+      // Deselect: Escape
+      if (e.key === "Escape") {
+        e.preventDefault();
+        deselectAll();
+        return;
+      }
+
+      // Tool shortcuts: V = Select, H = Pan
+      if (!cmdOrCtrl && !e.altKey && !e.shiftKey) {
+        if (e.key.toLowerCase() === "v") {
+          e.preventDefault();
+          setActiveTool("select");
+          return;
+        }
+        if (e.key.toLowerCase() === "h") {
+          e.preventDefault();
+          setActiveTool("pan");
+          return;
+        }
+      }
+
+      // Z-Order shortcuts: [ ]
+      if (e.key === "[") {
+        e.preventDefault();
+        if (e.shiftKey) sendToBack();
+        else sendBackward();
+        return;
+      }
+      if (e.key === "]") {
+        e.preventDefault();
+        if (e.shiftKey) bringToFront();
+        else bringForward();
+        return;
+      }
+
+      // Arrow Key Nudges: 1mm normal, 10mm with Shift
+      const step = e.shiftKey ? 10 : 1;
+      if (e.key === "ArrowLeft") {
+        e.preventDefault();
+        nudgeSelected(-step, 0);
+        return;
+      }
+      if (e.key === "ArrowRight") {
+        e.preventDefault();
+        nudgeSelected(step, 0);
+        return;
+      }
+      if (e.key === "ArrowUp") {
+        e.preventDefault();
+        nudgeSelected(0, -step);
+        return;
+      }
+      if (e.key === "ArrowDown") {
+        e.preventDefault();
+        nudgeSelected(0, step);
+        return;
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [
+    undo,
+    redo,
+    duplicateSelected,
+    copySelected,
+    paste,
+    deleteSelected,
+    deselectAll,
+    setActiveTool,
+    bringForward,
+    sendBackward,
+    bringToFront,
+    sendToBack,
+    nudgeSelected,
+  ]);
+
+  // Periodic autosave (every 10 seconds if unsaved)
+  React.useEffect(() => {
+    const timer = setInterval(() => {
+      saveToStorage();
+    }, 10000);
+    return () => clearInterval(timer);
+  }, [saveToStorage]);
+
+  const rawBook = getBookById(bookId);
+  if (!rawBook && !book) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center bg-bg p-6 text-center">
         <h2 className="font-serif text-2xl font-medium text-text">Book Not Found</h2>
@@ -44,169 +261,22 @@ export default function BookEditorPage() {
     );
   }
 
-  const activePage = pages[activePageIndex] || { position: activePageIndex + 1, data: { bg: "var(--bg)", elements: [] } };
-
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-bg text-text selection:bg-accent-soft selection:text-text">
-      {/* Editor Top Bar (56px) */}
-      <header className="flex h-14 shrink-0 items-center justify-between border-b border-border bg-surface px-4 z-30">
-        <div className="flex items-center gap-3">
-          <Link href="/dashboard">
-            <Button variant="ghost" size="sm" className="h-8 text-xs text-text-muted">
-              <ArrowLeft className="mr-1.5 h-3.5 w-3.5" /> Dashboard
-            </Button>
-          </Link>
+      {/* Top Bar (56px) */}
+      <TopBar />
 
-          <div className="h-4 w-px bg-border" />
-
-          <div className="flex items-center gap-2">
-            <span className="font-serif text-sm font-medium tracking-tight text-text">
-              {book.title}
-            </span>
-            <span className="rounded bg-accent-soft px-2 py-0.5 text-[10px] font-mono text-text-muted">
-              {book.size} · {theme?.name || book.themeId}
-            </span>
-          </div>
-
-          <div className="hidden md:flex items-center gap-1.5 text-xs text-text-muted">
-            <CheckCircle2 className="h-3 w-3 text-success" />
-            <span className="text-[11px]">Saved · just now</span>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <span className="hidden sm:inline text-xs text-text-muted font-mono">
-            {pages.length} Pages Initialized
-          </span>
-          <Link href={`/books/${book.id}/preview`}>
-            <Button variant="outline" size="sm" className="h-8 text-xs gap-1.5">
-              <Eye className="h-3.5 w-3.5" /> Preview
-            </Button>
-          </Link>
-          <Button size="sm" className="h-8 text-xs gap-1.5">
-            <Download className="h-3.5 w-3.5" /> Export PDF (₹50)
-          </Button>
-        </div>
-      </header>
-
-      {/* Editor Main Canvas Body */}
-      <div className="flex flex-1 overflow-hidden">
-        {/* Left Tool Rail (72px) */}
-        <aside className="w-[72px] shrink-0 border-r border-border bg-surface flex flex-col items-center py-4 gap-4 z-20">
-          <button className="flex flex-col items-center gap-1 text-text-muted hover:text-text text-[10px] font-medium p-2 rounded-[8px] hover:bg-accent-soft w-14">
-            <Palette className="h-5 w-5" />
-            Themes
-          </button>
-          <button className="flex flex-col items-center gap-1 text-text-muted hover:text-text text-[10px] font-medium p-2 rounded-[8px] hover:bg-accent-soft w-14">
-            <Layers className="h-5 w-5" />
-            Layouts
-          </button>
-          <button className="flex flex-col items-center gap-1 text-text-muted hover:text-text text-[10px] font-medium p-2 rounded-[8px] hover:bg-accent-soft w-14">
-            <BookOpen className="h-5 w-5" />
-            Text
-          </button>
-          <button className="flex flex-col items-center gap-1 text-text-muted hover:text-text text-[10px] font-medium p-2 rounded-[8px] hover:bg-accent-soft w-14">
-            <Sliders className="h-5 w-5" />
-            Elements
-          </button>
-        </aside>
-
-        {/* Center Workspace Stage */}
-        <main className="flex-1 overflow-auto bg-accent-soft/30 p-8 flex flex-col items-center justify-center relative">
-          <div className="mb-3 flex items-center justify-between w-full max-w-[420px] text-xs font-mono text-text-muted">
-            <span>PAGE {activePageIndex + 1} OF {pages.length}</span>
-            <span>{book.size === "A5" ? "148 × 210 mm" : book.size === "A4" ? "210 × 297 mm" : "203 × 203 mm"}</span>
-          </div>
-
-          {/* Active Page Stage Preview */}
-          <div
-            className={`w-full max-w-[420px] shadow-card rounded-[6px] border border-border p-8 flex flex-col justify-between transition-all duration-150 ${
-              book.size === "Square" ? "aspect-square" : "aspect-[148/210]"
-            }`}
-            style={{ backgroundColor: theme?.palette.bg || "#FFFFFF" }}
-          >
-            {activePageIndex === 0 ? (
-              /* Cover Page */
-              <div className="flex-1 flex flex-col justify-between text-center py-8">
-                <span className="text-[10px] font-mono uppercase tracking-widest text-text-muted">
-                  {book.dates || "Front Cover"}
-                </span>
-
-                <div className="space-y-3">
-                  <h1
-                    className="font-serif text-3xl font-semibold tracking-tight"
-                    style={{ color: theme?.palette.primary || "var(--text)" }}
-                  >
-                    {book.title}
-                  </h1>
-                  {book.subtitle && (
-                    <p className="text-xs italic text-text-muted" style={{ color: theme?.palette.muted }}>
-                      {book.subtitle}
-                    </p>
-                  )}
-                  <div
-                    className="h-0.5 w-10 mx-auto rounded"
-                    style={{ backgroundColor: theme?.palette.accent || "var(--accent)" }}
-                  />
-                </div>
-
-                <div className="text-xs font-medium text-text">
-                  By {book.author || user?.name}
-                </div>
-              </div>
-            ) : (
-              /* Content Page */
-              <div className="flex-1 flex flex-col justify-between">
-                <div className="space-y-3">
-                  <span className="text-[10px] font-mono text-text-muted">
-                    Chapter Opener · Layout {activePage.data?.layoutId || "L01"}
-                  </span>
-                  <div className="rounded border border-dashed border-border/80 p-6 text-center bg-surface/50">
-                    <p className="text-xs text-text-muted">
-                      Blank Page Slot ready for Konva Stage (Day 5)
-                    </p>
-                    <p className="text-[11px] font-mono text-text-muted mt-1">
-                      1 mm = 4 px scale · Safe Margin: {theme?.defaults.marginMm || 10} mm
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex justify-between items-center text-[10px] font-mono text-text-muted pt-4 border-t border-border/40">
-                  <span>Storybound Book</span>
-                  <span>Page {activePageIndex + 1}</span>
-                </div>
-              </div>
-            )}
-          </div>
+      {/* Main Workspace (Left Rail + Canvas + Properties Panel) */}
+      <div className="flex flex-1 overflow-hidden relative">
+        <LeftRail />
+        <main className="flex-1 h-full overflow-hidden relative bg-[#F4F3EF]">
+          <PageCanvas />
         </main>
+        <PropertiesPanel />
       </div>
 
       {/* Bottom Page Strip (110px) */}
-      <footer className="h-[110px] shrink-0 border-t border-border bg-surface px-6 py-3 flex items-center gap-3 overflow-x-auto z-20">
-        <span className="text-xs font-mono text-text-muted shrink-0 mr-2">
-          {pages.length} PAGES:
-        </span>
-
-        <div className="flex items-center gap-3">
-          {pages.map((p, idx) => (
-            <button
-              key={p.id}
-              type="button"
-              onClick={() => setActivePageIndex(idx)}
-              className={`shrink-0 flex flex-col items-center gap-1 p-1 rounded-[6px] border transition-all ${
-                activePageIndex === idx
-                  ? "border-accent bg-accent-soft ring-1 ring-accent"
-                  : "border-border hover:bg-accent-soft/40"
-              }`}
-            >
-              <div className="h-14 w-10 rounded border border-border bg-bg flex items-center justify-center text-[10px] font-mono text-text-muted shadow-sm">
-                {idx === 0 ? "Cover" : idx + 1}
-              </div>
-              <span className="text-[9px] font-mono text-text-muted">p.{idx + 1}</span>
-            </button>
-          ))}
-        </div>
-      </footer>
+      <PageStrip />
     </div>
   );
 }
