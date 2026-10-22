@@ -13,6 +13,8 @@ export interface BaseEl {
   locked?: boolean;
   opacity?: number; // 0 to 1
   themeToken?: "primary" | "accent" | "muted" | "text" | "surface";
+  flipX?: boolean;
+  flipY?: boolean;
 }
 
 export interface TextEl extends BaseEl {
@@ -23,11 +25,19 @@ export interface TextEl extends BaseEl {
   weight: number;
   italic?: boolean;
   underline?: boolean;
+  strikethrough?: boolean;
+  uppercase?: boolean;
   color: string;
   align: "left" | "center" | "right" | "justify";
   lineHeight: number;
   letterSpacing: number;
   border?: { w: number; color: string; radius?: number; style?: "solid" | "dashed" };
+  // Canva-style text transparency & effects
+  isHollow?: boolean; // Transparent text knockout fill with outline
+  effect?: "none" | "shadow" | "lift" | "neon" | "hollow" | "background";
+  effectColor?: string;
+  effectIntensity?: number; // 0 to 1
+  bgPill?: { color: string; opacity: number; padding?: number; radius?: number };
 }
 
 export interface ImageEl extends BaseEl {
@@ -40,7 +50,6 @@ export interface ImageEl extends BaseEl {
   frame?: "none" | "polaroid" | "round" | "arch";
   border?: { w: number; color: string; radius?: number; style?: "solid" | "dashed" };
   radius?: number;
-  flipX?: boolean;
 }
 
 export interface ShapeEl extends BaseEl {
@@ -50,6 +59,13 @@ export interface ShapeEl extends BaseEl {
     | "circle"
     | "line"
     | "arrow"
+    | "arrow-curved-up"
+    | "arrow-curved-down"
+    | "arrow-curved-left"
+    | "arrow-curved-arch"
+    | "arrow-s-curve"
+    | "arrow-double-curved"
+    | "emoji-sticker"
     | "frame-polaroid"
     | "frame-arch"
     | "divider-rule"
@@ -65,6 +81,7 @@ export interface ShapeEl extends BaseEl {
   stroke?: string;
   strokeW?: number;
   cornerRadius?: number;
+  emoji?: string;
 }
 
 export interface IconEl extends BaseEl {

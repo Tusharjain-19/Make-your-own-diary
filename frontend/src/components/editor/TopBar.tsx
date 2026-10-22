@@ -16,6 +16,9 @@ import {
   RotateCcw,
   Eye,
   Download,
+  ChevronLeft,
+  ChevronRight,
+  Pencil,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { StoryboundLogo } from "@/components/ui/logo";
@@ -25,6 +28,7 @@ export function TopBar() {
   const {
     book,
     activePageIndex,
+    setActivePage,
     zoom,
     activeTool,
     undoStack,
@@ -61,22 +65,26 @@ export function TopBar() {
   const totalPages = book?.pages.length || 20;
 
   return (
-    <header className="flex h-14 shrink-0 items-center justify-between border-b border-border bg-surface px-4 z-40 select-none">
+    <header className="flex h-14 shrink-0 items-center justify-between border-b border-border bg-surface px-4 z-40 select-none shadow-xs">
       {/* Left: Brand, Back & Book Title */}
-      <div className="flex items-center gap-2.5">
+      <div className="flex items-center gap-3">
         <StoryboundLogo size="sm" iconOnly href="/dashboard" />
         <Link href="/dashboard">
-          <Button variant="ghost" size="sm" className="h-8 text-xs text-text-muted hover:text-text px-2">
-            <ArrowLeft className="mr-1 h-3.5 w-3.5" /> Dashboard
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 text-xs font-medium text-text-muted hover:text-text hover:bg-accent-soft/60 px-2.5 rounded-[8px]"
+          >
+            <ArrowLeft className="mr-1.5 h-3.5 w-3.5" /> Dashboard
           </Button>
         </Link>
 
-        <div className="h-4 w-px bg-border" />
+        <div className="h-4 w-px bg-border/80" />
 
         {isEditingTitle ? (
           <input
             type="text"
-            className="h-8 rounded-[6px] border border-accent bg-surface px-2 text-sm font-serif font-medium text-text focus:outline-none"
+            className="h-8 rounded-[8px] border border-accent bg-surface px-2.5 text-sm font-serif font-medium text-text shadow-xs focus:outline-none focus:ring-1 focus:ring-accent"
             value={titleValue}
             onChange={(e) => setTitleValue(e.target.value)}
             onBlur={handleTitleSubmit}
@@ -86,98 +94,125 @@ export function TopBar() {
         ) : (
           <button
             onClick={() => setIsEditingTitle(true)}
-            className="flex items-center gap-2 rounded px-2 py-1 text-sm font-serif font-medium tracking-tight text-text hover:bg-accent-soft/60"
+            className="group flex items-center gap-2 rounded-[8px] px-2.5 py-1 text-sm font-serif font-medium tracking-tight text-text hover:bg-accent-soft/60 transition-all border border-transparent hover:border-border"
             title="Click to rename book"
           >
             <span>{book?.title || "Untitled Book"}</span>
-            <span className="rounded bg-accent-soft px-1.5 py-0.5 text-[10px] font-mono text-text-muted">
+            <span className="rounded-full bg-accent-soft px-2 py-0.5 text-[10px] font-mono font-medium text-text-muted border border-border/40">
               {book?.size || "A5"}
             </span>
+            <Pencil className="h-3 w-3 text-text-muted opacity-0 group-hover:opacity-100 transition-opacity ml-0.5" />
           </button>
         )}
       </div>
 
-      {/* Center: Undo/Redo, Tools, Zoom, Page Indicator */}
-      <div className="flex items-center gap-1.5">
-        {/* Undo / Redo */}
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-8 w-8 text-text-muted hover:text-text disabled:opacity-30"
-          onClick={undo}
-          disabled={undoStack.length === 0}
-          title="Undo (Ctrl+Z)"
-        >
-          <Undo2 className="h-3.5 w-3.5" />
-        </Button>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-8 w-8 text-text-muted hover:text-text disabled:opacity-30"
-          onClick={redo}
-          disabled={redoStack.length === 0}
-          title="Redo (Ctrl+Y)"
-        >
-          <Redo2 className="h-3.5 w-3.5" />
-        </Button>
+      {/* Center: Luxury Segmented Toolbar (Undo/Redo, Tool, Zoom, Page Switcher) */}
+      <div className="flex items-center gap-2">
+        {/* Undo / Redo Segment */}
+        <div className="flex items-center rounded-[8px] border border-border bg-bg/60 p-0.5 shadow-xs">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7 text-text-muted hover:text-text rounded disabled:opacity-30"
+            onClick={undo}
+            disabled={undoStack.length === 0}
+            title="Undo (Ctrl+Z)"
+          >
+            <Undo2 className="h-3.5 w-3.5" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7 text-text-muted hover:text-text rounded disabled:opacity-30"
+            onClick={redo}
+            disabled={redoStack.length === 0}
+            title="Redo (Ctrl+Y)"
+          >
+            <Redo2 className="h-3.5 w-3.5" />
+          </Button>
+        </div>
 
-        <div className="h-4 w-px bg-border mx-1" />
+        {/* Tool Select / Pan Segment */}
+        <div className="flex items-center rounded-[8px] border border-border bg-bg/60 p-0.5 shadow-xs">
+          <Button
+            variant={activeTool === "select" ? "secondary" : "ghost"}
+            size="icon"
+            className={`h-7 w-7 rounded transition-all ${
+              activeTool === "select" ? "bg-surface text-text shadow-xs font-semibold" : "text-text-muted"
+            }`}
+            onClick={() => setActiveTool("select")}
+            title="Select Tool (V)"
+          >
+            <MousePointer className="h-3.5 w-3.5" />
+          </Button>
+          <Button
+            variant={activeTool === "pan" ? "secondary" : "ghost"}
+            size="icon"
+            className={`h-7 w-7 rounded transition-all ${
+              activeTool === "pan" ? "bg-surface text-text shadow-xs font-semibold" : "text-text-muted"
+            }`}
+            onClick={() => setActiveTool("pan")}
+            title="Hand Pan Tool (H / Space+Drag)"
+          >
+            <Hand className="h-3.5 w-3.5" />
+          </Button>
+        </div>
 
-        {/* Tool Select / Pan */}
-        <Button
-          variant={activeTool === "select" ? "secondary" : "ghost"}
-          size="icon"
-          className="h-8 w-8"
-          onClick={() => setActiveTool("select")}
-          title="Select Tool (V)"
-        >
-          <MousePointer className="h-3.5 w-3.5" />
-        </Button>
-        <Button
-          variant={activeTool === "pan" ? "secondary" : "ghost"}
-          size="icon"
-          className="h-8 w-8"
-          onClick={() => setActiveTool("pan")}
-          title="Hand Pan Tool (H / Space+Drag)"
-        >
-          <Hand className="h-3.5 w-3.5" />
-        </Button>
-
-        <div className="h-4 w-px bg-border mx-1" />
-
-        {/* Zoom Controls */}
-        <div className="flex items-center gap-1 rounded-[6px] border border-border bg-bg px-1 py-0.5 text-xs">
+        {/* Zoom Controls Segment */}
+        <div className="flex items-center rounded-[8px] border border-border bg-bg/60 px-1 py-0.5 shadow-xs">
           <button
-            onClick={() => setZoom(zoom - 0.15)}
-            className="rounded p-1 hover:bg-accent-soft text-text-muted hover:text-text"
+            onClick={() => setZoom(Math.max(0.2, zoom - 0.15))}
+            className="rounded p-1 hover:bg-accent-soft text-text-muted hover:text-text transition-colors"
             title="Zoom out"
           >
-            <ZoomOut className="h-3 w-3" />
+            <ZoomOut className="h-3.5 w-3.5" />
           </button>
-          <span className="w-12 text-center font-mono text-[11px] font-medium text-text">
-            {Math.round(zoom * 100)}%
-          </span>
           <button
-            onClick={() => setZoom(zoom + 0.15)}
-            className="rounded p-1 hover:bg-accent-soft text-text-muted hover:text-text"
+            onClick={() => setZoom(1.0)}
+            className="w-12 text-center font-mono text-[11px] font-semibold text-text hover:text-accent transition-colors"
+            title="Click to reset zoom to 100%"
+          >
+            {Math.round(zoom * 100)}%
+          </button>
+          <button
+            onClick={() => setZoom(Math.min(3.0, zoom + 0.15))}
+            className="rounded p-1 hover:bg-accent-soft text-text-muted hover:text-text transition-colors"
             title="Zoom in"
           >
-            <ZoomIn className="h-3 w-3" />
+            <ZoomIn className="h-3.5 w-3.5" />
           </button>
         </div>
 
-        <div className="h-4 w-px bg-border mx-1" />
-
-        {/* Page Indicator */}
-        <span className="font-mono text-xs text-text-muted">
-          Page {activePageIndex + 1} of {totalPages}
-        </span>
+        {/* Page Switcher Segment with < Prev and Next > */}
+        <div className="flex items-center rounded-[8px] border border-border bg-bg/60 p-0.5 shadow-xs">
+          <button
+            type="button"
+            onClick={() => setActivePage(Math.max(0, activePageIndex - 1))}
+            disabled={activePageIndex === 0}
+            className="h-7 w-7 rounded flex items-center justify-center hover:bg-surface text-text-muted hover:text-text disabled:opacity-25 transition-colors"
+            title="Previous Page (Left Arrow)"
+          >
+            <ChevronLeft className="h-3.5 w-3.5" />
+          </button>
+          <span className="font-mono text-xs font-medium text-text px-2 min-w-[75px] text-center">
+            {activePageIndex === 0 ? "Cover" : `Page ${activePageIndex + 1}`} <span className="text-text-muted">/ {totalPages}</span>
+          </span>
+          <button
+            type="button"
+            onClick={() => setActivePage(Math.min(totalPages - 1, activePageIndex + 1))}
+            disabled={activePageIndex >= totalPages - 1}
+            className="h-7 w-7 rounded flex items-center justify-center hover:bg-surface text-text-muted hover:text-text disabled:opacity-25 transition-colors"
+            title="Next Page (Right Arrow)"
+          >
+            <ChevronRight className="h-3.5 w-3.5" />
+          </button>
+        </div>
       </div>
 
       {/* Right: Save Status, Preview, Export */}
       <div className="flex items-center gap-3">
-        {/* Save Status Indicator (Day 7 prompt) */}
-        <div className="flex items-center gap-1.5 text-xs text-text-muted bg-surface-container-low px-2 py-1 rounded-[6px] border border-border">
+        {/* Save Status Indicator */}
+        <div className="flex items-center gap-1.5 text-xs text-text-muted bg-surface px-2.5 py-1 rounded-[8px] border border-border shadow-xs">
           {saveStatus === "saving" && (
             <>
               <Loader2 className="h-3 w-3 animate-spin text-accent" />
@@ -187,8 +222,8 @@ export function TopBar() {
 
           {saveStatus === "saved" && (
             <>
-              <CheckCircle2 className="h-3 w-3 text-emerald-600" />
-              <span className="text-[11px] font-mono text-text">
+              <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
+              <span className="text-[11px] font-mono text-text font-medium">
                 Saved · {lastSavedAt ? lastSavedAt : "just now"}
               </span>
             </>
@@ -219,13 +254,13 @@ export function TopBar() {
 
         {book && (
           <Link href={`/books/${book.id}/preview`}>
-            <Button variant="outline" size="sm" className="h-8 text-xs gap-1.5">
-              <Eye className="h-3.5 w-3.5" /> Preview
+            <Button variant="outline" size="sm" className="h-8 text-xs gap-1.5 rounded-[8px] border-border hover:bg-accent-soft/60">
+              <Eye className="h-3.5 w-3.5 text-accent" /> Preview
             </Button>
           </Link>
         )}
 
-        <Button size="sm" className="h-8 text-xs gap-1.5 bg-accent text-white hover:bg-neutral-800">
+        <Button size="sm" className="h-8 text-xs gap-1.5 bg-accent text-white hover:bg-neutral-800 rounded-[8px] shadow-sm font-medium">
           <Download className="h-3.5 w-3.5" /> Download PDF · ₹50
         </Button>
       </div>

@@ -160,7 +160,7 @@ function LoginForm() {
             <div className="rounded-[8px] border border-border bg-accent-soft/40 p-3 text-xs">
               <div className="flex items-center gap-1.5 font-medium text-text">
                 <UserCheck className="h-3.5 w-3.5 text-accent" />
-                Quick Multi-User RLS Testing:
+                Quick Demo Login (2 Accounts):
               </div>
               <div className="mt-2 grid grid-cols-2 gap-2">
                 <Button
@@ -171,17 +171,17 @@ function LoginForm() {
                   onClick={() => quickLogin("tushar@storybound.app")}
                 >
                   <UserCheck className="mr-1.5 h-3.5 w-3.5 text-text-muted" />
-                  Tushar (Jaipur)
+                  Tushar
                 </Button>
                 <Button
                   type="button"
                   variant="secondary"
                   size="sm"
                   className="h-8 text-xs justify-start"
-                  onClick={() => quickLogin("sarah@storybound.app")}
+                  onClick={() => quickLogin("nandini@storybound.app")}
                 >
                   <UserCheck className="mr-1.5 h-3.5 w-3.5 text-text-muted" />
-                  Sarah (Goa)
+                  Nandini
                 </Button>
               </div>
             </div>

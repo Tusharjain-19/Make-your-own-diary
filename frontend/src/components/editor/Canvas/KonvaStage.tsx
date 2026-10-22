@@ -27,7 +27,20 @@ export default function KonvaStage() {
     updateElement,
     setGuides,
     setPan,
+    setZoom,
     saveToStorage,
+    showMargins,
+    showBleed,
+    showRulers,
+    copiedStyle,
+    applyCopiedStyle,
+    deleteSelected,
+    duplicateSelected,
+    copySelected,
+    paste,
+    undo,
+    redo,
+    nudgeSelected,
   } = useEditorStore();
 
   const containerRef = React.useRef<HTMLDivElement | null>(null);
@@ -35,6 +48,14 @@ export default function KonvaStage() {
   const transformerRef = React.useRef<Konva.Transformer | null>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const nodeRefs = React.useRef<Map<string, any>>(new Map());
+
+  // Live Rotation Degree & Guiding Crosshairs State
+  const [rotatingInfo, setRotatingInfo] = React.useState<{
+    active: boolean;
+    degree: number;
+    centerPx: { x: number; y: number } | null;
+    badgePos: { x: number; y: number } | null;
+  }>({ active: false, degree: 0, centerPx: null, badgePos: null });
 
   // Inline text editing state
   const [editingTextId, setEditingTextId] = React.useState<string | null>(null);
@@ -131,18 +152,104 @@ export default function KonvaStage() {
     tr.getLayer()?.batchDraw();
   }, [selectedIds, activePage.elements]);
 
-  // Space-pan keyboard listener
+  // Comprehensive Keyboard Shortcuts & Pan listener
   React.useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      // If typing in input/textarea (like the inline text editing overlay), ignore shortcuts
+      const target = e.target as HTMLElement;
       if (
-        e.code === "Space" &&
-        !e.repeat &&
-        document.activeElement?.tagName !== "INPUT" &&
-        document.activeElement?.tagName !== "TEXTAREA"
+        (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable) &&
+        target !== document.body
       ) {
+        return;
+      }
+
+      const isMac = navigator.platform.toUpperCase().indexOf("MAC") >= 0;
+      const cmdOrCtrl = isMac ? e.metaKey : e.ctrlKey;
+
+      if (e.code === "Space" && !e.repeat) {
         setIsSpacePressed(true);
+        return;
+      }
+
+      // Delete: Delete or Backspace
+      if ((e.key === "Delete" || e.key === "Backspace") && selectedIds.length > 0) {
+        e.preventDefault();
+        deleteSelected();
+        saveToStorage();
+        return;
+      }
+
+      // Duplicate: Ctrl/Cmd + D
+      if (cmdOrCtrl && e.key.toLowerCase() === "d" && selectedIds.length > 0) {
+        e.preventDefault();
+        duplicateSelected();
+        saveToStorage();
+        return;
+      }
+
+      // Copy: Ctrl/Cmd + C
+      if (cmdOrCtrl && e.key.toLowerCase() === "c" && selectedIds.length > 0) {
+        e.preventDefault();
+        copySelected();
+        return;
+      }
+
+      // Paste: Ctrl/Cmd + V
+      if (cmdOrCtrl && e.key.toLowerCase() === "v") {
+        e.preventDefault();
+        paste();
+        saveToStorage();
+        return;
+      }
+
+      // Undo: Ctrl/Cmd + Z
+      if (cmdOrCtrl && !e.shiftKey && e.key.toLowerCase() === "z") {
+        e.preventDefault();
+        undo();
+        return;
+      }
+
+      // Redo: Ctrl/Cmd + Y or Ctrl/Cmd + Shift + Z
+      if ((cmdOrCtrl && e.key.toLowerCase() === "y") || (cmdOrCtrl && e.shiftKey && e.key.toLowerCase() === "z")) {
+        e.preventDefault();
+        redo();
+        return;
+      }
+
+      // Deselect: Escape
+      if (e.key === "Escape") {
+        e.preventDefault();
+        deselectAll();
+        return;
+      }
+
+      // Arrow Key Nudges: 1mm normal, 10mm with Shift
+      if (selectedIds.length > 0) {
+        const step = e.shiftKey ? 10 : 1;
+        if (e.key === "ArrowLeft") {
+          e.preventDefault();
+          nudgeSelected(-step, 0);
+          return;
+        }
+        if (e.key === "ArrowRight") {
+          e.preventDefault();
+          nudgeSelected(step, 0);
+          return;
+        }
+        if (e.key === "ArrowUp") {
+          e.preventDefault();
+          nudgeSelected(0, -step);
+          return;
+        }
+        if (e.key === "ArrowDown") {
+          e.preventDefault();
+          nudgeSelected(0, step);
+          return;
+        }
       }
     };
+
     const handleKeyUp = (e: KeyboardEvent) => {
       if (e.code === "Space") {
         setIsSpacePressed(false);
@@ -156,7 +263,18 @@ export default function KonvaStage() {
       window.removeEventListener("keydown", handleKeyDown);
       window.removeEventListener("keyup", handleKeyUp);
     };
-  }, []);
+  }, [
+    selectedIds,
+    deleteSelected,
+    duplicateSelected,
+    copySelected,
+    paste,
+    undo,
+    redo,
+    deselectAll,
+    nudgeSelected,
+    saveToStorage,
+  ]);
 
   const sortedElements = React.useMemo(() => {
     return [...activePage.elements].sort((a, b) => (a.z || 0) - (b.z || 0));
@@ -210,7 +328,35 @@ export default function KonvaStage() {
     };
   }, [editingEl, layerX, layerY, zoom]);
 
+  const handleSelectElement = React.useCallback(
+    (id: string, multi = false) => {
+      // Unfocus any active DOM input so keyboard shortcuts (Delete, Backspace, Ctrl+C/V/D) respond instantly
+      if (
+        typeof document !== "undefined" &&
+        document.activeElement instanceof HTMLElement &&
+        document.activeElement.tagName !== "BODY"
+      ) {
+        document.activeElement.blur();
+      }
+      if (copiedStyle) {
+        applyCopiedStyle(id);
+      } else {
+        selectElement(id, multi);
+      }
+    },
+    [copiedStyle, applyCopiedStyle, selectElement]
+  );
+
   const handleStageMouseDown = (e: Konva.KonvaEventObject<MouseEvent>) => {
+    // Unfocus any active DOM input on canvas click
+    if (
+      typeof document !== "undefined" &&
+      document.activeElement instanceof HTMLElement &&
+      document.activeElement.tagName !== "BODY"
+    ) {
+      document.activeElement.blur();
+    }
+
     // If Space is pressed or Pan tool is active, handle canvas pan
     if (isSpacePressed || activeTool === "pan" || e.evt.button === 1) {
       setIsPanning(true);
@@ -298,6 +444,30 @@ export default function KonvaStage() {
     }
   };
 
+  // Canvas Mouse Wheel & Touchpad Scrolling (Vertical, Horizontal with Shift, Zoom with Ctrl)
+  const handleWheel = (e: Konva.KonvaEventObject<WheelEvent>) => {
+    e.evt.preventDefault();
+
+    // Ctrl or Meta: Zoom in/out
+    if (e.evt.ctrlKey || e.evt.metaKey) {
+      const zoomFactor = 1.05;
+      const direction = e.evt.deltaY > 0 ? -1 : 1;
+      const newZoom = direction > 0 ? zoom * zoomFactor : zoom / zoomFactor;
+      const clampedZoom = Math.max(0.2, Math.min(3.0, newZoom));
+      setZoom(Math.round(clampedZoom * 100) / 100);
+      return;
+    }
+
+    // Shift key or horizontal touchpad gesture: Horizontal Scroll
+    if (e.evt.shiftKey || Math.abs(e.evt.deltaX) > Math.abs(e.evt.deltaY)) {
+      const delta = e.evt.deltaX !== 0 ? e.evt.deltaX : e.evt.deltaY;
+      setPan({ x: pan.x - delta, y: pan.y });
+    } else {
+      // Normal Vertical Wheel Scroll
+      setPan({ x: pan.x, y: pan.y - e.evt.deltaY });
+    }
+  };
+
   const handleElementDragMove = (
     elId: string,
     xPx: number,
@@ -369,6 +539,7 @@ export default function KonvaStage() {
         onMouseDown={handleStageMouseDown}
         onMouseMove={handleStageMouseMove}
         onMouseUp={handleStageMouseUp}
+        onWheel={handleWheel}
       >
         <Layer
           x={layerX}
@@ -412,39 +583,57 @@ export default function KonvaStage() {
           )}
 
           {/* Safe Margins Guide (subtle dashed line) */}
-          <Rect
-            x={marginPx}
-            y={marginPx}
-            width={pageWidthPx - marginPx * 2}
-            height={pageHeightPx - marginPx * 2}
-            stroke="#1A1A1A"
-            strokeWidth={0.75}
-            dash={[4, 4]}
-            opacity={0.15}
-            listening={false}
-          />
+          {showMargins && (
+            <Rect
+              x={marginPx}
+              y={marginPx}
+              width={pageWidthPx - marginPx * 2}
+              height={pageHeightPx - marginPx * 2}
+              stroke="#1A1A1A"
+              strokeWidth={0.75}
+              dash={[4, 4]}
+              opacity={0.15}
+              listening={false}
+            />
+          )}
 
           {/* Render Page Elements */}
           {sortedElements.map((el) => {
             if (el.type === "text") {
+              const textEl = el as TextEl;
               return (
-                <TextNode
-                  key={el.id}
-                  ref={(node) => {
-                    if (node) nodeRefs.current.set(el.id, node);
-                    else nodeRefs.current.delete(el.id);
-                  }}
-                  element={el}
-                  activeTool={activeTool}
-                  isEditing={editingTextId === el.id}
-                  onSelect={(multi) => selectElement(el.id, multi)}
-                  onDoubleClick={() => setEditingTextId(el.id)}
-                  onDragMove={(x, y, w, h) => handleElementDragMove(el.id, x, y, w, h)}
-                  onDragEnd={(x, y) => handleElementDragEnd(el.id, x, y)}
-                  onTransformEnd={(x, y, w, h, rot) =>
-                    handleElementTransformEnd(el.id, x, y, w, h, rot)
-                  }
-                />
+                <React.Fragment key={el.id}>
+                  {/* Fading Font Box Background Shape (Canva-style) */}
+                  {textEl.bgPill && (
+                    <Rect
+                      x={mmToPx(el.x)}
+                      y={mmToPx(el.y)}
+                      width={mmToPx(el.w)}
+                      height={mmToPx(el.h)}
+                      fill={textEl.bgPill.color || "#FFFFFF"}
+                      opacity={textEl.bgPill.opacity ?? 0.8}
+                      cornerRadius={textEl.bgPill.radius || 4}
+                      rotation={el.rot || 0}
+                      listening={false}
+                    />
+                  )}
+                  <TextNode
+                    ref={(node) => {
+                      if (node) nodeRefs.current.set(el.id, node);
+                      else nodeRefs.current.delete(el.id);
+                    }}
+                    element={el}
+                    activeTool={activeTool}
+                    isEditing={editingTextId === el.id}
+                    onSelect={(multi) => handleSelectElement(el.id, multi)}
+                    onDoubleClick={() => setEditingTextId(el.id)}
+                    onDragMove={(x, y, w, h) => handleElementDragMove(el.id, x, y, w, h)}
+                    onDragEnd={(x, y) => handleElementDragEnd(el.id, x, y)}
+                    onTransformEnd={(x, y, w, h, rot) =>
+                      handleElementTransformEnd(el.id, x, y, w, h, rot)
+                    }
+                  />
+                </React.Fragment>
               );
             }
 
@@ -458,7 +647,7 @@ export default function KonvaStage() {
                   }}
                   element={el}
                   activeTool={activeTool}
-                  onSelect={(multi) => selectElement(el.id, multi)}
+                  onSelect={(multi) => handleSelectElement(el.id, multi)}
                   onDragMove={(x, y, w, h) => handleElementDragMove(el.id, x, y, w, h)}
                   onDragEnd={(x, y) => handleElementDragEnd(el.id, x, y)}
                   onTransformEnd={(x, y, w, h, rot) =>
@@ -478,7 +667,7 @@ export default function KonvaStage() {
                   }}
                   element={el}
                   activeTool={activeTool}
-                  onSelect={(multi) => selectElement(el.id, multi)}
+                  onSelect={(multi) => handleSelectElement(el.id, multi)}
                   onDragMove={(x, y, w, h) => handleElementDragMove(el.id, x, y, w, h)}
                   onDragEnd={(x, y) => handleElementDragEnd(el.id, x, y)}
                   onTransformEnd={(x, y, w, h, rot) =>
@@ -498,7 +687,7 @@ export default function KonvaStage() {
                   }}
                   element={el}
                   activeTool={activeTool}
-                  onSelect={(multi) => selectElement(el.id, multi)}
+                  onSelect={(multi) => handleSelectElement(el.id, multi)}
                   onDragMove={(x, y, w, h) => handleElementDragMove(el.id, x, y, w, h)}
                   onDragEnd={(x, y) => handleElementDragEnd(el.id, x, y)}
                   onTransformEnd={(x, y, w, h, rot) =>
@@ -511,77 +700,111 @@ export default function KonvaStage() {
             return null;
           })}
 
-          {/* PAGE BOUNDARY CUT & TRANSLUCENT OVERFLOW MATTE */}
-          {/* Top matte */}
-          <Rect
-            x={-3000}
-            y={-3000}
-            width={pageWidthPx + 6000}
-            height={3000}
-            fill="rgba(244, 244, 242, 0.76)"
-            listening={false}
-          />
-          {/* Bottom matte */}
-          <Rect
-            x={-3000}
-            y={pageHeightPx}
-            width={pageWidthPx + 6000}
-            height={3000}
-            fill="rgba(244, 244, 242, 0.76)"
-            listening={false}
-          />
-          {/* Left matte */}
-          <Rect
-            x={-3000}
-            y={0}
-            width={3000}
-            height={pageHeightPx}
-            fill="rgba(244, 244, 242, 0.76)"
-            listening={false}
-          />
-          {/* Right matte */}
-          <Rect
-            x={pageWidthPx}
-            y={0}
-            width={3000}
-            height={pageHeightPx}
-            fill="rgba(244, 244, 242, 0.76)"
-            listening={false}
-          />
+          {/* PAGE BOUNDARY CUT & TRANSLUCENT OVERFLOW MATTE (Canva Print Bleed) */}
+          {showBleed && (
+            <>
+              {/* Top matte */}
+              <Rect
+                x={-3000}
+                y={-3000}
+                width={pageWidthPx + 6000}
+                height={3000}
+                fill="rgba(244, 244, 242, 0.76)"
+                listening={false}
+              />
+              {/* Bottom matte */}
+              <Rect
+                x={-3000}
+                y={pageHeightPx}
+                width={pageWidthPx + 6000}
+                height={3000}
+                fill="rgba(244, 244, 242, 0.76)"
+                listening={false}
+              />
+              {/* Left matte */}
+              <Rect
+                x={-3000}
+                y={0}
+                width={3000}
+                height={pageHeightPx}
+                fill="rgba(244, 244, 242, 0.76)"
+                listening={false}
+              />
+              {/* Right matte */}
+              <Rect
+                x={pageWidthPx}
+                y={0}
+                width={3000}
+                height={pageHeightPx}
+                fill="rgba(244, 244, 242, 0.76)"
+                listening={false}
+              />
 
-          {/* Page Trim Cut Boundary (Dashed Magenta/Coral) */}
-          <Rect
-            x={0}
-            y={0}
-            width={pageWidthPx}
-            height={pageHeightPx}
-            stroke="#FF2D95"
-            strokeWidth={1 / zoom}
-            dash={[6 / zoom, 4 / zoom]}
-            opacity={0.8}
-            listening={false}
-          />
+              {/* Page Trim Cut Boundary (Dashed Magenta/Coral) */}
+              <Rect
+                x={0}
+                y={0}
+                width={pageWidthPx}
+                height={pageHeightPx}
+                stroke="#FF2D95"
+                strokeWidth={1 / zoom}
+                dash={[6 / zoom, 4 / zoom]}
+                opacity={0.8}
+                listening={false}
+              />
 
-          {/* Corner Crop Marks */}
-          <Line points={[-12, 0, 0, 0]} stroke="#FF2D95" strokeWidth={1.2 / zoom} listening={false} />
-          <Line points={[0, -12, 0, 0]} stroke="#FF2D95" strokeWidth={1.2 / zoom} listening={false} />
-          <Line points={[pageWidthPx, 0, pageWidthPx + 12, 0]} stroke="#FF2D95" strokeWidth={1.2 / zoom} listening={false} />
-          <Line points={[pageWidthPx, -12, pageWidthPx, 0]} stroke="#FF2D95" strokeWidth={1.2 / zoom} listening={false} />
-          <Line points={[-12, pageHeightPx, 0, pageHeightPx]} stroke="#FF2D95" strokeWidth={1.2 / zoom} listening={false} />
-          <Line points={[0, pageHeightPx, 0, pageHeightPx + 12]} stroke="#FF2D95" strokeWidth={1.2 / zoom} listening={false} />
-          <Line points={[pageWidthPx, pageHeightPx, pageWidthPx + 12, pageHeightPx]} stroke="#FF2D95" strokeWidth={1.2 / zoom} listening={false} />
-          <Line points={[pageWidthPx, pageHeightPx, pageWidthPx, pageHeightPx + 12]} stroke="#FF2D95" strokeWidth={1.2 / zoom} listening={false} />
+              {/* Corner Crop Marks */}
+              <Line points={[-12, 0, 0, 0]} stroke="#FF2D95" strokeWidth={1.2 / zoom} listening={false} />
+              <Line points={[0, -12, 0, 0]} stroke="#FF2D95" strokeWidth={1.2 / zoom} listening={false} />
+              <Line points={[pageWidthPx, 0, pageWidthPx + 12, 0]} stroke="#FF2D95" strokeWidth={1.2 / zoom} listening={false} />
+              <Line points={[pageWidthPx, -12, pageWidthPx, 0]} stroke="#FF2D95" strokeWidth={1.2 / zoom} listening={false} />
+              <Line points={[-12, pageHeightPx, 0, pageHeightPx]} stroke="#FF2D95" strokeWidth={1.2 / zoom} listening={false} />
+              <Line points={[0, pageHeightPx, 0, pageHeightPx + 12]} stroke="#FF2D95" strokeWidth={1.2 / zoom} listening={false} />
+              <Line points={[pageWidthPx, pageHeightPx, pageWidthPx + 12, pageHeightPx]} stroke="#FF2D95" strokeWidth={1.2 / zoom} listening={false} />
+              <Line points={[pageWidthPx, pageHeightPx, pageWidthPx, pageHeightPx + 12]} stroke="#FF2D95" strokeWidth={1.2 / zoom} listening={false} />
+            </>
+          )}
 
           {/* Konva Transformer Selection Box */}
           <Transformer
             ref={transformerRef}
             rotateAnchorOffset={24}
+            rotationSnaps={[0, 45, 90, 135, 180, 225, 270, 315]}
+            rotationSnapTolerance={5}
             borderStroke="#1A1A1A"
             borderStrokeWidth={1.5}
             anchorStroke="#1A1A1A"
             anchorFill="#FFFFFF"
             anchorSize={8}
             anchorCornerRadius={1}
+            onTransform={() => {
+              const nodes = transformerRef.current?.nodes() || [];
+              if (nodes.length > 0) {
+                const node = nodes[0];
+                const rawRot = Math.round(node.rotation());
+                let deg = rawRot % 360;
+                if (deg > 180) deg -= 360;
+                if (deg < -180) deg += 360;
+
+                const nodeW = Math.max(10, node.width() * (node.scaleX() || 1));
+                const nodeH = Math.max(10, node.height() * (node.scaleY() || 1));
+                const cx = node.x() + nodeW / 2;
+                const cy = node.y() + nodeH / 2;
+
+                setRotatingInfo({
+                  active: true,
+                  degree: deg,
+                  centerPx: { x: cx, y: cy },
+                  badgePos: {
+                    x: layerX + cx * zoom,
+                    y: layerY + cy * zoom - 36,
+                  },
+                });
+              }
+            }}
+            onTransformEnd={() => {
+              setRotatingInfo({ active: false, degree: 0, centerPx: null, badgePos: null });
+            }}
             enabledAnchors={[
               "top-left",
               "top-center",
@@ -620,6 +843,43 @@ export default function KonvaStage() {
             />
           ))}
 
+          {/* Live Rotation Guiding Crosshairs & Degree Ray */}
+          {rotatingInfo.active && rotatingInfo.centerPx && (
+            <>
+              {/* Horizontal Center Guide */}
+              <Line
+                points={[-800, rotatingInfo.centerPx.y, pageWidthPx + 800, rotatingInfo.centerPx.y]}
+                stroke="#FF2D95"
+                strokeWidth={1.2 / zoom}
+                dash={[5 / zoom, 4 / zoom]}
+                opacity={0.85}
+                listening={false}
+              />
+              {/* Vertical Center Guide */}
+              <Line
+                points={[rotatingInfo.centerPx.x, -800, rotatingInfo.centerPx.x, pageHeightPx + 800]}
+                stroke="#FF2D95"
+                strokeWidth={1.2 / zoom}
+                dash={[5 / zoom, 4 / zoom]}
+                opacity={0.85}
+                listening={false}
+              />
+              {/* Angle Ray along rotation axis */}
+              <Line
+                points={[
+                  rotatingInfo.centerPx.x - Math.cos((rotatingInfo.degree * Math.PI) / 180) * 800,
+                  rotatingInfo.centerPx.y - Math.sin((rotatingInfo.degree * Math.PI) / 180) * 800,
+                  rotatingInfo.centerPx.x + Math.cos((rotatingInfo.degree * Math.PI) / 180) * 800,
+                  rotatingInfo.centerPx.y + Math.sin((rotatingInfo.degree * Math.PI) / 180) * 800,
+                ]}
+                stroke="#FF2D95"
+                strokeWidth={1.4 / zoom}
+                opacity={0.9}
+                listening={false}
+              />
+            </>
+          )}
+
           {/* Marquee Selection Box */}
           {marquee.active && (
             <Rect
@@ -636,6 +896,22 @@ export default function KonvaStage() {
           )}
         </Layer>
       </Stage>
+
+      {/* Live Rotation Degree Badge */}
+      {rotatingInfo.active && rotatingInfo.badgePos && (
+        <div
+          className="pointer-events-none absolute z-50 flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold tracking-wider text-white bg-neutral-900/95 border border-white/20 shadow-2xl backdrop-blur -translate-x-1/2 -translate-y-full transition-all"
+          style={{
+            left: `${rotatingInfo.badgePos.x}px`,
+            top: `${rotatingInfo.badgePos.y}px`,
+          }}
+        >
+          <svg className="w-3.5 h-3.5 text-[#FF2D95]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+          </svg>
+          <span>{rotatingInfo.degree}°</span>
+        </div>
+      )}
 
       {/* Double-click Inline Text Editing Overlay */}
       {editingEl && (
@@ -658,6 +934,42 @@ export default function KonvaStage() {
           }}
         />
       )}
+      {/* Floating Recenter / Reset View Button when panned */}
+      {(pan.x !== 0 || pan.y !== 0) && (
+        <button
+          type="button"
+          onClick={() => setPan({ x: 0, y: 0 })}
+          className="absolute bottom-4 left-1/2 -translate-x-1/2 z-40 flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-surface/90 hover:bg-surface text-text text-xs font-medium border border-border shadow-md backdrop-blur transition-all active:scale-95"
+          title="Reset canvas pan to center"
+        >
+          <svg className="w-3.5 h-3.5 text-accent" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M15 10l-3-3m0 0l-3 3m3-3v12" />
+          </svg>
+          <span>Recenter Page</span>
+        </button>
+      )}
+
+      {/* Subtle Vertical Canvas Scroll Track Indicator */}
+      <div className="absolute right-1 top-2 bottom-2 w-1.5 bg-black/5 rounded-full pointer-events-none z-30">
+        <div
+          className="w-full bg-neutral-400/60 rounded-full transition-all"
+          style={{
+            height: `${Math.max(24, Math.min(stageSize.height - 16, (stageSize.height / (pageHeightPx * zoom + stageSize.height)) * stageSize.height))}px`,
+            transform: `translateY(${Math.max(0, Math.min(stageSize.height - 40, (0.5 - pan.y / (pageHeightPx * zoom + 500)) * (stageSize.height - 40)))}px)`,
+          }}
+        />
+      </div>
+
+      {/* Subtle Horizontal Canvas Scroll Track Indicator */}
+      <div className="absolute bottom-1 left-2 right-2 h-1.5 bg-black/5 rounded-full pointer-events-none z-30">
+        <div
+          className="h-full bg-neutral-400/60 rounded-full transition-all"
+          style={{
+            width: `${Math.max(24, Math.min(stageSize.width - 16, (stageSize.width / (pageWidthPx * zoom + stageSize.width)) * stageSize.width))}px`,
+            transform: `translateX(${Math.max(0, Math.min(stageSize.width - 40, (0.5 - pan.x / (pageWidthPx * zoom + 500)) * (stageSize.width - 40)))}px)`,
+          }}
+        />
+      </div>
     </div>
   );
 }

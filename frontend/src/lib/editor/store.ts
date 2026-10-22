@@ -21,6 +21,11 @@ interface EditorState {
   saveStatus: "saved" | "saving" | "unsaved" | "error";
   lastSavedAt: string | null;
 
+  showMargins: boolean;
+  showBleed: boolean;
+  showRulers: boolean;
+  copiedStyle: Record<string, any> | null;
+
   // Actions
   setBook: (book: BookModel) => void;
   setActivePage: (index: number) => void;
@@ -40,6 +45,13 @@ interface EditorState {
   bringToFront: () => void;
   sendToBack: () => void;
   toggleLockSelected: () => void;
+  flipHorizontalSelected: () => void;
+  flipVerticalSelected: () => void;
+  copyStyle: () => void;
+  applyCopiedStyle: (targetId: string) => void;
+  toggleMargins: () => void;
+  toggleBleed: () => void;
+  toggleRulers: () => void;
   undo: () => void;
   redo: () => void;
   setZoom: (zoom: number) => void;
@@ -51,6 +63,7 @@ interface EditorState {
   duplicatePage: (index: number) => void;
   deletePage: (index: number) => void;
   reorderPages: (fromIndex: number, toIndex: number) => void;
+  setPageBackground: (color: string, applyToAll?: boolean) => void;
   saveToStorage: () => Promise<void>;
   retrySave: () => Promise<void>;
 }
@@ -80,6 +93,10 @@ export const useEditorStore = create<EditorState>()(
     redoStack: [],
     saveStatus: "saved",
     lastSavedAt: null,
+    showMargins: true,
+    showBleed: true,
+    showRulers: false,
+    copiedStyle: null,
 
     setBook: (book) =>
       set((state) => {
@@ -223,34 +240,84 @@ export const useEditorStore = create<EditorState>()(
         if (!state.book || state.selectedIds.length === 0) return;
         const page = state.book.pages[state.activePageIndex];
         if (!page) return;
-        state.clipboard = page.elements
+        const copied = page.elements
           .filter((e) => state.selectedIds.includes(e.id))
           .map((e) => JSON.parse(JSON.stringify(e)));
+        state.clipboard = copied;
+        if (typeof window !== "undefined") {
+          try {
+            window.sessionStorage.setItem(
+              "storybound_clipboard",
+              JSON.stringify({ sourcePageIndex: state.activePageIndex, elements: copied })
+            );
+          } catch {
+            // ignore
+          }
+        }
       }),
 
     paste: () =>
       set((state) => {
-        if (!state.book || !state.clipboard || state.clipboard.length === 0) return;
+        if (!state.book) return;
+        let clipboardElements = state.clipboard;
+        let sourcePage = state.activePageIndex;
+
+        if ((!clipboardElements || clipboardElements.length === 0) && typeof window !== "undefined") {
+          try {
+            const raw = window.sessionStorage.getItem("storybound_clipboard");
+            if (raw) {
+              const parsed = JSON.parse(raw);
+              clipboardElements = parsed.elements || [];
+              sourcePage = parsed.sourcePageIndex ?? state.activePageIndex;
+            }
+          } catch {
+            // ignore
+          }
+        }
+
+        if (!clipboardElements || clipboardElements.length === 0) return;
+
         pushHistory(state);
         const page = state.book.pages[state.activePageIndex];
         if (!page) return;
+
         const maxZ = page.elements.reduce((max, e) => Math.max(max, e.z || 0), 0);
         const newIds: string[] = [];
+        const isSamePage = sourcePage === state.activePageIndex;
+        const offsetMm = isSamePage ? 6 : 0; // On different page: exact same coordinates! On same page: 6mm offset
 
-        for (let i = 0; i < state.clipboard.length; i++) {
-          const item = state.clipboard[i];
+        for (let i = 0; i < clipboardElements.length; i++) {
+          const item = clipboardElements[i];
           const newId = `el-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`;
           const pasted: El = {
             ...JSON.parse(JSON.stringify(item)),
             id: newId,
-            x: item.x + 8,
-            y: item.y + 8,
+            x: Math.max(0, item.x + offsetMm),
+            y: Math.max(0, item.y + offsetMm),
             z: maxZ + i + 1,
           };
           page.elements.push(pasted);
           newIds.push(newId);
         }
         state.selectedIds = newIds;
+        state.saveStatus = "unsaved";
+      }),
+
+    setPageBackground: (color: string, applyToAll = false) =>
+      set((state) => {
+        if (!state.book) return;
+        pushHistory(state);
+        if (applyToAll) {
+          state.book.pages.forEach((p) => {
+            p.bg = color;
+          });
+        } else {
+          const page = state.book.pages[state.activePageIndex];
+          if (page) {
+            page.bg = color;
+          }
+        }
+        state.saveStatus = "unsaved";
       }),
 
     bringForward: () =>
@@ -323,6 +390,100 @@ export const useEditorStore = create<EditorState>()(
             el.locked = !anyLocked;
           }
         }
+      }),
+
+    flipHorizontalSelected: () =>
+      set((state) => {
+        if (!state.book || state.selectedIds.length === 0) return;
+        pushHistory(state);
+        const page = state.book.pages[state.activePageIndex];
+        if (!page) return;
+        for (const el of page.elements) {
+          if (state.selectedIds.includes(el.id)) {
+            el.flipX = !el.flipX;
+          }
+        }
+      }),
+
+    flipVerticalSelected: () =>
+      set((state) => {
+        if (!state.book || state.selectedIds.length === 0) return;
+        pushHistory(state);
+        const page = state.book.pages[state.activePageIndex];
+        if (!page) return;
+        for (const el of page.elements) {
+          if (state.selectedIds.includes(el.id)) {
+            el.flipY = !el.flipY;
+          }
+        }
+      }),
+
+    copyStyle: () =>
+      set((state) => {
+        if (!state.book || state.selectedIds.length === 0) return;
+        const page = state.book.pages[state.activePageIndex];
+        if (!page) return;
+        const selected = page.elements.find((e) => state.selectedIds.includes(e.id));
+        if (!selected) return;
+
+        if (selected.type === "text") {
+          const t = selected as TextEl;
+          state.copiedStyle = {
+            font: t.font,
+            size: t.size,
+            weight: t.weight,
+            italic: t.italic,
+            underline: t.underline,
+            strikethrough: t.strikethrough,
+            uppercase: t.uppercase,
+            color: t.color,
+            align: t.align,
+            lineHeight: t.lineHeight,
+            letterSpacing: t.letterSpacing,
+            border: t.border ? { ...t.border } : undefined,
+            opacity: t.opacity,
+            isHollow: t.isHollow,
+            effect: t.effect,
+            effectColor: t.effectColor,
+            effectIntensity: t.effectIntensity,
+            bgPill: t.bgPill ? { ...t.bgPill } : undefined,
+          };
+        } else {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const anyEl = selected as any;
+          state.copiedStyle = {
+            border: anyEl.border ? { ...anyEl.border } : undefined,
+            opacity: selected.opacity,
+            fill: anyEl.fill,
+            stroke: anyEl.stroke,
+          } as Partial<El>;
+        }
+      }),
+
+    applyCopiedStyle: (targetId: string) =>
+      set((state) => {
+        if (!state.book || !state.copiedStyle) return;
+        pushHistory(state);
+        const page = state.book.pages[state.activePageIndex];
+        if (!page) return;
+        const target = page.elements.find((e) => e.id === targetId);
+        if (!target) return;
+        Object.assign(target, JSON.parse(JSON.stringify(state.copiedStyle)));
+      }),
+
+    toggleMargins: () =>
+      set((state) => {
+        state.showMargins = !state.showMargins;
+      }),
+
+    toggleBleed: () =>
+      set((state) => {
+        state.showBleed = !state.showBleed;
+      }),
+
+    toggleRulers: () =>
+      set((state) => {
+        state.showRulers = !state.showRulers;
       }),
 
     undo: () =>

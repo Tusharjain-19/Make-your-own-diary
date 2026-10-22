@@ -75,6 +75,10 @@ export const ImageNode = React.forwardRef<Konva.Group, ImageNodeProps>(
         width={wPx}
         height={hPx}
         rotation={element.rot || 0}
+        scaleX={element.flipX ? -1 : 1}
+        offsetX={element.flipX ? wPx : 0}
+        scaleY={element.flipY ? -1 : 1}
+        offsetY={element.flipY ? hPx : 0}
         opacity={element.opacity ?? 1}
         draggable={!element.locked && activeTool === "select"}
         onMouseDown={(e) => {

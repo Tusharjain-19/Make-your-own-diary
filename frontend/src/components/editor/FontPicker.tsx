@@ -64,7 +64,7 @@ export function FontPicker({ currentFont, onSelectFont, className = "" }: FontPi
 
       {/* Dropdown Menu */}
       {isOpen && (
-        <div className="absolute left-0 top-full z-50 mt-1.5 w-72 rounded-[10px] border border-border bg-surface p-2 shadow-card backdrop-blur-md animate-in fade-in-50 zoom-in-95">
+        <div className="absolute left-0 top-full z-[100] mt-1.5 w-80 rounded-[10px] border border-border bg-surface p-2 shadow-2xl backdrop-blur-md animate-in fade-in-50 zoom-in-95">
           {/* Search Box */}
           <div className="relative mb-2">
             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-text-muted" />

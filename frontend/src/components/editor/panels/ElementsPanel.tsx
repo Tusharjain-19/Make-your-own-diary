@@ -13,15 +13,32 @@ import {
   Heart,
   BookOpen,
   Award,
+  Smile,
+  Navigation,
 } from "lucide-react";
 import { useEditorStore } from "@/lib/editor/store";
 import { ShapeEl, IconEl } from "@/lib/editor/types";
 import { EDITOR_ICONS } from "@/lib/editor/icons";
 import { themes } from "@/lib/themes";
 
+const EMOJI_CATEGORIES = [
+  {
+    name: "Sparks & Sentiment",
+    emojis: ["✨", "💖", "❤️", "⭐", "🌟", "🔥", "🌈", "☕", "🕊️", "💫", "☀️", "🌙", "🌸", "🌺", "🍃", "🍁"],
+  },
+  {
+    name: "Travel & Exploration",
+    emojis: ["✈️", "🧳", "📸", "🗺️", "🧭", "🚗", "🚂", "🚢", "🏔️", "🏖️", "⛺", "🏰", "🏛️", "🎟️", "🛵", "🚲"],
+  },
+  {
+    name: "Diary & Celebrations",
+    emojis: ["📖", "💌", "🎈", "🎉", "👑", "💎", "🎨", "🥨", "🍕", "🍦", "🍹", "🥂", "🌻", "🪷", "🏮", "🎐"],
+  },
+];
+
 export function ElementsPanel() {
   const { addElement, book } = useEditorStore();
-  const [activeTab, setActiveTab] = React.useState<"shapes" | "frames" | "dividers" | "cute" | "icons">("shapes");
+  const [activeTab, setActiveTab] = React.useState<"shapes" | "arrows" | "frames" | "dividers" | "cute" | "icons" | "emojis">("shapes");
   const [iconCategory, setIconCategory] = React.useState<"all" | "travel" | "decor" | "writing">("all");
 
   const currentTheme = themes.find((t) => t.id === book?.themeId) || themes[0];
@@ -32,6 +49,8 @@ export function ElementsPanel() {
     options?: Partial<ShapeEl>
   ) => {
     const baseId = `shape-${Date.now()}`;
+    const isArrow = shape.startsWith("arrow");
+
     const newShape: ShapeEl = {
       id: baseId,
       type: "shape",
@@ -43,6 +62,8 @@ export function ElementsPanel() {
           ? 90
           : shape === "cute-wavy" || shape === "cute-dots"
           ? 75
+          : isArrow
+          ? 55
           : shape === "tape"
           ? 45
           : shape === "frame-polaroid"
@@ -57,6 +78,8 @@ export function ElementsPanel() {
           ? 4
           : shape === "cute-wavy" || shape === "cute-dots"
           ? 8
+          : isArrow
+          ? 35
           : shape === "tape"
           ? 12
           : shape === "frame-polaroid"
@@ -81,21 +104,43 @@ export function ElementsPanel() {
           ? accentColor
           : shape === "cute-seal"
           ? "#8B2635"
+          : isArrow
+          ? accentColor
           : "#F0EEE9",
       stroke:
         shape === "line" || shape === "divider-rule" || shape === "divider-dotted"
           ? accentColor
           : shape === "cute-wavy"
           ? accentColor
+          : isArrow
+          ? accentColor
           : shape === "cute-heart" || shape === "cute-dots"
           ? "#C96D7C"
           : shape === "stamp"
           ? accentColor
           : "#D4D0C8",
-      strokeW: shape === "cute-wavy" ? 1.5 : 0.75,
+      strokeW: shape === "cute-wavy" || isArrow ? 1.5 : 0.75,
       opacity: shape === "tape" ? 0.88 : 1,
       themeToken: "accent",
       ...options,
+    };
+    addElement(newShape);
+  };
+
+  const handleAddEmoji = (emoji: string) => {
+    const baseId = `emoji-${Date.now()}`;
+    const newShape: ShapeEl = {
+      id: baseId,
+      type: "shape",
+      shape: "emoji-sticker",
+      emoji,
+      x: 45,
+      y: 45,
+      w: 24,
+      h: 24,
+      rot: 0,
+      z: 4,
+      opacity: 1,
     };
     addElement(newShape);
   };
@@ -129,14 +174,16 @@ export function ElementsPanel() {
       <div>
         <h3 className="font-serif text-base font-medium text-text">Elements & Graphics</h3>
         <p className="text-xs text-text-muted mt-0.5">
-          Insert vector shapes, frames, tape, stamps, and editorial travel icons.
+          Insert vector shapes, curved arrows, stickers, frames, and travel icons.
         </p>
       </div>
 
       {/* Tabs */}
-      <div className="flex border-b border-border pb-1 gap-1">
+      <div className="flex border-b border-border pb-1 gap-1 overflow-x-auto scrollbar-none">
         {[
           { id: "shapes", label: "Shapes" },
+          { id: "arrows", label: "Curved Arrows" },
+          { id: "emojis", label: "Emojis" },
           { id: "frames", label: "Frames" },
           { id: "dividers", label: "Dividers" },
           { id: "cute", label: "Cute" },
@@ -145,7 +192,7 @@ export function ElementsPanel() {
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id as typeof activeTab)}
-            className={`px-2.5 py-1 text-xs font-medium rounded-t transition-colors ${
+            className={`px-2.5 py-1 text-xs font-medium rounded-t transition-colors whitespace-nowrap ${
               activeTab === tab.id
                 ? "border-b-2 border-accent text-accent font-semibold"
                 : "text-text-muted hover:text-text"
@@ -188,12 +235,125 @@ export function ElementsPanel() {
             className="flex flex-col items-center justify-center gap-2 rounded-[8px] border border-border bg-surface p-3 hover:bg-accent-soft/40 transition-all text-xs font-medium"
           >
             <MoveRight className="h-5 w-5 text-accent" />
-            <span>Direction Arrow</span>
+            <span>Straight Arrow</span>
           </button>
         </div>
       )}
 
-      {/* TAB 2: FRAMES & TAPE */}
+      {/* TAB 2: CURVED ARROWS (Rotatable & Customizable) */}
+      {activeTab === "arrows" && (
+        <div className="space-y-3">
+          <div className="text-xs text-text-muted leading-relaxed">
+            Click to add curved vector arrows. You can rotate them to any angle with live degree guides!
+          </div>
+
+          <div className="grid grid-cols-2 gap-2.5">
+            {/* Curved Arrow Up-Right */}
+            <button
+              onClick={() => handleAddShape("arrow-curved-up")}
+              className="flex flex-col items-center justify-center gap-2 rounded-[8px] border border-border bg-surface p-3.5 hover:bg-accent-soft/40 transition-all text-xs font-medium group"
+            >
+              <svg className="w-10 h-8 text-accent group-hover:scale-105 transition-transform" viewBox="0 0 100 60" fill="none" stroke="currentColor" strokeWidth="6" strokeLinecap="round">
+                <path d="M 10,50 Q 50,10 85,20" />
+                <path d="M 68,14 L 88,20 L 80,38" fill="currentColor" stroke="none" />
+              </svg>
+              <span>Curve Up-Right</span>
+            </button>
+
+            {/* Curved Arrow Down-Right */}
+            <button
+              onClick={() => handleAddShape("arrow-curved-down")}
+              className="flex flex-col items-center justify-center gap-2 rounded-[8px] border border-border bg-surface p-3.5 hover:bg-accent-soft/40 transition-all text-xs font-medium group"
+            >
+              <svg className="w-10 h-8 text-accent group-hover:scale-105 transition-transform" viewBox="0 0 100 60" fill="none" stroke="currentColor" strokeWidth="6" strokeLinecap="round">
+                <path d="M 10,10 Q 50,55 85,45" />
+                <path d="M 68,48 L 88,44 L 78,28" fill="currentColor" stroke="none" />
+              </svg>
+              <span>Curve Down-Right</span>
+            </button>
+
+            {/* Curved Arrow Loop Left */}
+            <button
+              onClick={() => handleAddShape("arrow-curved-left")}
+              className="flex flex-col items-center justify-center gap-2 rounded-[8px] border border-border bg-surface p-3.5 hover:bg-accent-soft/40 transition-all text-xs font-medium group"
+            >
+              <svg className="w-10 h-8 text-accent group-hover:scale-105 transition-transform" viewBox="0 0 100 60" fill="none" stroke="currentColor" strokeWidth="6" strokeLinecap="round">
+                <path d="M 90,50 Q 50,8 15,30" />
+                <path d="M 32,22 L 12,30 L 22,48" fill="currentColor" stroke="none" />
+              </svg>
+              <span>Curve Loop Left</span>
+            </button>
+
+            {/* Arch Arrow */}
+            <button
+              onClick={() => handleAddShape("arrow-curved-arch")}
+              className="flex flex-col items-center justify-center gap-2 rounded-[8px] border border-border bg-surface p-3.5 hover:bg-accent-soft/40 transition-all text-xs font-medium group"
+            >
+              <svg className="w-10 h-8 text-accent group-hover:scale-105 transition-transform" viewBox="0 0 100 60" fill="none" stroke="currentColor" strokeWidth="6" strokeLinecap="round">
+                <path d="M 12,50 Q 50,0 88,48" />
+                <path d="M 72,36 L 89,50 L 94,30" fill="currentColor" stroke="none" />
+              </svg>
+              <span>Arch Arrow</span>
+            </button>
+
+            {/* S-Curve Arrow */}
+            <button
+              onClick={() => handleAddShape("arrow-s-curve")}
+              className="flex flex-col items-center justify-center gap-2 rounded-[8px] border border-border bg-surface p-3.5 hover:bg-accent-soft/40 transition-all text-xs font-medium group"
+            >
+              <svg className="w-10 h-8 text-accent group-hover:scale-105 transition-transform" viewBox="0 0 100 60" fill="none" stroke="currentColor" strokeWidth="6" strokeLinecap="round">
+                <path d="M 10,48 Q 30,5 50,30 T 90,15" />
+                <path d="M 72,12 L 92,14 L 84,32" fill="currentColor" stroke="none" />
+              </svg>
+              <span>S-Curve Arrow</span>
+            </button>
+
+            {/* Double-Headed Curved Arrow */}
+            <button
+              onClick={() => handleAddShape("arrow-double-curved")}
+              className="flex flex-col items-center justify-center gap-2 rounded-[8px] border border-border bg-surface p-3.5 hover:bg-accent-soft/40 transition-all text-xs font-medium group"
+            >
+              <svg className="w-10 h-8 text-accent group-hover:scale-105 transition-transform" viewBox="0 0 100 60" fill="none" stroke="currentColor" strokeWidth="6" strokeLinecap="round">
+                <path d="M 15,48 Q 50,5 85,48" />
+                <path d="M 70,36 L 86,49 L 91,30" fill="currentColor" stroke="none" />
+                <path d="M 30,36 L 14,49 L 9,30" fill="currentColor" stroke="none" />
+              </svg>
+              <span>Double Curved</span>
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* TAB 3: EMOJIS & STICKERS */}
+      {activeTab === "emojis" && (
+        <div className="space-y-4 max-h-[380px] overflow-y-auto pr-1">
+          <div className="text-xs text-text-muted">
+            Click any emoji to add it as a rotatable, resizable sticker on your page.
+          </div>
+
+          {EMOJI_CATEGORIES.map((cat) => (
+            <div key={cat.name} className="space-y-2">
+              <div className="text-[11px] font-medium font-serif text-text-muted uppercase tracking-wider">
+                {cat.name}
+              </div>
+              <div className="grid grid-cols-4 gap-2">
+                {cat.emojis.map((emoji, idx) => (
+                  <button
+                    key={`${cat.name}-${idx}`}
+                    onClick={() => handleAddEmoji(emoji)}
+                    className="flex h-11 w-full items-center justify-center rounded-[8px] border border-border bg-surface text-xl hover:bg-accent-soft/60 hover:scale-110 active:scale-95 transition-all shadow-xs"
+                    title={`Add ${emoji}`}
+                  >
+                    <span>{emoji}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* TAB 4: FRAMES & TAPE */}
       {activeTab === "frames" && (
         <div className="space-y-2.5">
           <button
@@ -248,7 +408,7 @@ export function ElementsPanel() {
         </div>
       )}
 
-      {/* TAB 3: DIVIDERS */}
+      {/* TAB 5: DIVIDERS */}
       {activeTab === "dividers" && (
         <div className="space-y-2.5">
           <button
@@ -273,7 +433,7 @@ export function ElementsPanel() {
         </div>
       )}
 
-      {/* TAB 4: CUTE & STATIONERY */}
+      {/* TAB 6: CUTE & STATIONERY */}
       {activeTab === "cute" && (
         <div className="space-y-2.5">
           {/* Cute Wavy Doodle Line */}
@@ -354,7 +514,7 @@ export function ElementsPanel() {
         </div>
       )}
 
-      {/* TAB 5: ICONS (SVG with currentColor) */}
+      {/* TAB 7: ICONS (SVG with currentColor) */}
       {activeTab === "icons" && (
         <div className="space-y-3">
           {/* Subcategory Pills */}

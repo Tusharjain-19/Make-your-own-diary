@@ -32,8 +32,8 @@ export function LeftRail() {
 
   return (
     <div className="relative flex z-30 select-none">
-      {/* 72px Icon Rail */}
-      <aside className="w-[72px] shrink-0 border-r border-border bg-surface flex flex-col items-center py-3 gap-2">
+      {/* 76px Icon Rail */}
+      <aside className="w-[76px] shrink-0 border-r border-border bg-surface flex flex-col items-center py-3.5 gap-2.5">
         {RAIL_ITEMS.map((item) => {
           const Icon = item.icon;
           const isActive = activePanel === item.id;
@@ -41,7 +41,7 @@ export function LeftRail() {
             <button
               key={item.id}
               onClick={() => setActivePanel(item.id)}
-              className={`flex flex-col items-center justify-center gap-1 w-14 h-14 rounded-[8px] transition-all text-[10px] font-medium ${
+              className={`flex flex-col items-center justify-center gap-1.5 w-[62px] h-[60px] rounded-[10px] transition-all text-[11px] font-medium ${
                 isActive
                   ? "bg-accent text-white shadow-sm"
                   : "text-text-muted hover:text-text hover:bg-accent-soft"
@@ -54,11 +54,11 @@ export function LeftRail() {
         })}
       </aside>
 
-      {/* 300px Expanding Flyout Panel */}
+      {/* 370px Spacious Expanding Flyout Panel */}
       {activePanel && (
-        <div className="w-[300px] shrink-0 border-r border-border bg-surface h-full flex flex-col shadow-card animate-in slide-in-from-left-2 duration-150">
-          <div className="flex h-12 items-center justify-between border-b border-border px-4">
-            <span className="font-serif text-sm font-semibold capitalize text-accent">
+        <div className="w-[370px] shrink-0 border-r border-border bg-surface h-full flex flex-col shadow-card animate-in slide-in-from-left-2 duration-150">
+          <div className="flex h-12 items-center justify-between border-b border-border px-5">
+            <span className="font-serif text-base font-semibold capitalize text-accent">
               {activePanel}
             </span>
             <button

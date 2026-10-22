@@ -243,3 +243,55 @@ html {
 .fade-in {
   animation: fadeIn 0.2s ease-out;
 }
+
+/* Warm Editorial Stationery Utilities from Stitch */
+.paper-texture {
+  background-color: var(--surface-container-lowest);
+  background-image: radial-gradient(rgba(26, 28, 27, 0.05) 0.5px, transparent 0.5px);
+  background-size: 16px 16px;
+}
+
+.paper-parchment {
+  background-color: #fdfbf7;
+  background-image: radial-gradient(rgba(106, 93, 67, 0.06) 0.6px, transparent 0.6px);
+  background-size: 14px 14px;
+}
+
+.deckled-edge {
+  box-shadow: inset 0 0 16px rgba(0, 0, 0, 0.035);
+}
+
+.book-spine-shadow {
+  box-shadow: inset 8px 0 12px -3px rgba(0, 0, 0, 0.18), inset -2px 0 4px rgba(255, 255, 255, 0.15), 0 10px 25px -4px rgba(26, 26, 26, 0.08);
+}
+
+.preview-ambient-stage {
+  background: radial-gradient(circle at 50% 38%, #2d2b27 0%, #201f1d 45%, #161514 100%);
+}
+
+.gutter-spine-gradient {
+  background: linear-gradient(
+    to right,
+    rgba(0, 0, 0, 0) 0%,
+    rgba(0, 0, 0, 0.05) 65%,
+    rgba(0, 0, 0, 0.2) 93%,
+    rgba(0, 0, 0, 0.35) 100%
+  );
+}
+
+.gutter-spine-gradient-right {
+  background: linear-gradient(
+    to left,
+    rgba(0, 0, 0, 0) 0%,
+    rgba(0, 0, 0, 0.05) 65%,
+    rgba(0, 0, 0, 0.2) 93%,
+    rgba(0, 0, 0, 0.35) 100%
+  );
+}
+
+.gold-foil {
+  background: linear-gradient(135deg, #f7dfa5 0%, #d4af37 50%, #aa820a 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+

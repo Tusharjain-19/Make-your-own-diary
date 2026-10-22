@@ -1,29 +1,6 @@
 "use client";
 
 import * as React from "react";
-import {
-  Lock,
-  Unlock,
-  Trash2,
-  Copy,
-  ChevronUp,
-  ChevronDown,
-  AlignLeft,
-  AlignCenter,
-  AlignRight,
-  AlignJustify,
-  Bold,
-  Italic,
-  Underline,
-  Palette,
-  Minus,
-  Plus,
-  Sliders,
-  Square,
-  Sparkles,
-  Layers,
-  Check,
-} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useEditorStore } from "@/lib/editor/store";
 import { TextEl, ImageEl, ShapeEl, IconEl } from "@/lib/editor/types";
@@ -31,6 +8,37 @@ import { FontPicker } from "./FontPicker";
 import { ColorPicker } from "./ColorPicker";
 import { themes } from "@/lib/themes";
 import { useToast } from "@/components/ui/toast";
+import {
+  SvgTransparency,
+  SvgPaintRoller,
+  SvgTextEffects,
+  SvgHollowText,
+  SvgUppercase,
+  SvgStrikethrough,
+  SvgFlipHorizontal,
+  SvgFlipVertical,
+  SvgBold,
+  SvgItalic,
+  SvgUnderline,
+  SvgAlignLeft,
+  SvgAlignCenter,
+  SvgAlignRight,
+  SvgAlignJustify,
+  SvgSpacing,
+  SvgBorder,
+  SvgLayerUp,
+  SvgLayerDown,
+  SvgLock,
+  SvgUnlock,
+  SvgDuplicate,
+  SvgTrash,
+  SvgPalette,
+  SvgMinus,
+  SvgPlus,
+  SvgCheck,
+  SvgMargins,
+  SvgPrintBleed,
+} from "./EditorSvgIcons";
 
 export function ContextToolbar() {
   const {
@@ -42,23 +50,33 @@ export function ContextToolbar() {
     duplicateSelected,
     bringForward,
     sendBackward,
-    bringToFront,
-    sendToBack,
     toggleLockSelected,
+    flipHorizontalSelected,
+    flipVerticalSelected,
+    copyStyle,
+    copiedStyle,
+    showMargins,
+    showBleed,
+    toggleMargins,
+    toggleBleed,
+    setPageBackground,
     saveToStorage,
   } = useEditorStore();
 
   const { showToast } = useToast();
 
+  const [applyBgToAll, setApplyBgToAll] = React.useState(false);
   const [isOpacityOpen, setIsOpacityOpen] = React.useState(false);
   const [isBorderOpen, setIsBorderOpen] = React.useState(false);
   const [isSpacingOpen, setIsSpacingOpen] = React.useState(false);
   const [isPaletteOpen, setIsPaletteOpen] = React.useState(false);
+  const [isEffectsOpen, setIsEffectsOpen] = React.useState(false);
 
   const opacityRef = React.useRef<HTMLDivElement | null>(null);
   const borderRef = React.useRef<HTMLDivElement | null>(null);
   const spacingRef = React.useRef<HTMLDivElement | null>(null);
   const paletteRef = React.useRef<HTMLDivElement | null>(null);
+  const effectsRef = React.useRef<HTMLDivElement | null>(null);
 
   // Close popovers on outside click
   React.useEffect(() => {
@@ -68,6 +86,7 @@ export function ContextToolbar() {
       if (borderRef.current && !borderRef.current.contains(target)) setIsBorderOpen(false);
       if (spacingRef.current && !spacingRef.current.contains(target)) setIsSpacingOpen(false);
       if (paletteRef.current && !paletteRef.current.contains(target)) setIsPaletteOpen(false);
+      if (effectsRef.current && !effectsRef.current.contains(target)) setIsEffectsOpen(false);
     };
     document.addEventListener("mousedown", handleOutside);
     return () => document.removeEventListener("mousedown", handleOutside);
@@ -77,7 +96,7 @@ export function ContextToolbar() {
   const selectedElements = activePage?.elements.filter((e) => selectedIds.includes(e.id)) || [];
   const primarySelected = selectedElements[0];
 
-  // Palette recolor action (Day 11)
+  // Palette recolor action
   const handleApplyPalette = (themeId: string) => {
     const selectedTheme = themes.find((t) => t.id === themeId);
     if (!selectedTheme || !activePage) return;
@@ -100,16 +119,13 @@ export function ContextToolbar() {
           }
         } else if (el.type === "shape") {
           const shapeEl = el as ShapeEl;
-          if (shapeEl.shape === "line" || shapeEl.shape === "divider-rule" || shapeEl.shape === "divider-dotted") {
+          if (shapeEl.shape === "tape") {
+            shapeEl.fill = selectedTheme.palette.accent;
+          } else if (shapeEl.shape === "divider-rule" || shapeEl.shape === "cute-wavy") {
             shapeEl.stroke = selectedTheme.palette.accent;
-          } else if (shapeEl.shape === "stamp") {
-            shapeEl.stroke = selectedTheme.palette.accent;
-            shapeEl.fill = selectedTheme.palette.bg;
           } else if (shapeEl.shape === "frame-arch") {
-            shapeEl.stroke = selectedTheme.palette.primary;
+            shapeEl.stroke = selectedTheme.palette.accent;
             shapeEl.fill = selectedTheme.palette.bg;
-          } else {
-            shapeEl.fill = selectedTheme.palette.surface;
           }
         } else if (el.type === "icon") {
           const iconEl = el as IconEl;
@@ -134,23 +150,58 @@ export function ContextToolbar() {
     updateElement(primarySelected.id, { opacity: val });
   };
 
-  // PAGE SETTINGS (When nothing is selected)
+  // ROOT / PAGE VIEW SETTINGS (When nothing is selected)
   if (!primarySelected) {
     return (
-      <div className="flex h-11 shrink-0 items-center justify-between border-b border-border bg-surface px-4 z-30 select-none text-xs">
+      <div className="flex h-11 shrink-0 items-center justify-between border-b border-border bg-surface px-4 z-40 select-none text-xs overflow-visible">
         <div className="flex items-center gap-3">
           <span className="font-serif font-medium text-text">Page Background:</span>
           <div className="w-40">
             <ColorPicker
               color={activePage?.bg || "#FAFAF8"}
               onChange={(hex) => {
-                useEditorStore.setState((state) => {
-                  const page = state.book?.pages[state.activePageIndex];
-                  if (page) page.bg = hex;
-                });
+                setPageBackground(hex, applyBgToAll);
                 saveToStorage();
+                if (applyBgToAll) {
+                  showToast("success", `Applied background color to all ${book?.pages.length || 20} pages`);
+                }
               }}
             />
+          </div>
+
+          {/* Scope Selector: This Page vs All Pages */}
+          <div className="flex items-center rounded-[6px] border border-border bg-bg p-0.5">
+            <button
+              type="button"
+              onClick={() => setApplyBgToAll(false)}
+              className={`px-2 py-0.5 rounded text-[11px] font-medium transition-colors ${
+                !applyBgToAll
+                  ? "bg-surface shadow-xs text-text font-semibold"
+                  : "text-text-muted hover:text-text"
+              }`}
+              title="Change background for this page only"
+            >
+              This Page
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setApplyBgToAll(true);
+                if (activePage?.bg) {
+                  setPageBackground(activePage.bg, true);
+                  saveToStorage();
+                  showToast("success", `Applied background color to all ${book?.pages.length || 20} pages`);
+                }
+              }}
+              className={`px-2 py-0.5 rounded text-[11px] font-medium transition-colors ${
+                applyBgToAll
+                  ? "bg-accent text-white shadow-xs font-semibold"
+                  : "text-text-muted hover:text-text"
+              }`}
+              title="Apply background to all pages across entire book"
+            >
+              All Pages ({book?.pages.length || 20})
+            </button>
           </div>
 
           <div className="h-4 w-px bg-border mx-1" />
@@ -167,36 +218,35 @@ export function ContextToolbar() {
               <button
                 key={tint.hex}
                 onClick={() => {
-                  useEditorStore.setState((state) => {
-                    const page = state.book?.pages[state.activePageIndex];
-                    if (page) page.bg = tint.hex;
-                  });
+                  setPageBackground(tint.hex, applyBgToAll);
                   saveToStorage();
+                  if (applyBgToAll) {
+                    showToast("success", `Applied ${tint.name} background to all ${book?.pages.length || 20} pages`);
+                  }
                 }}
-                className="h-6 w-6 rounded-full border border-border flex items-center justify-center hover:scale-110 transition-transform shadow-xs"
+                className={`h-5 w-5 rounded-full border transition-all ${
+                  activePage?.bg?.toLowerCase() === tint.hex.toLowerCase()
+                    ? "ring-2 ring-accent scale-110"
+                    : "border-border hover:scale-105"
+                }`}
                 style={{ backgroundColor: tint.hex }}
-                title={tint.name}
-              >
-                {activePage?.bg === tint.hex && (
-                  <Check
-                    className={`h-3 w-3 ${tint.hex === "#0E0E0E" ? "text-white" : "text-black"}`}
-                  />
-                )}
-              </button>
+                title={`${tint.name}${applyBgToAll ? " (All pages)" : ""}`}
+              />
             ))}
           </div>
 
           <div className="h-4 w-px bg-border mx-1" />
 
-          {/* Theme Palette Swapper Popover */}
+          {/* Palette Presets Menu */}
           <div className="relative" ref={paletteRef}>
             <Button
               variant="outline"
               size="sm"
               onClick={() => setIsPaletteOpen(!isPaletteOpen)}
-              className="h-7 text-xs gap-1.5"
+              className="h-8 text-xs gap-1.5"
             >
-              <Palette className="h-3.5 w-3.5 text-accent" /> Palettes (10)
+              <SvgPalette size={14} className="text-accent" />
+              <span>Palettes ({themes.length})</span>
             </Button>
 
             {isPaletteOpen && (
@@ -225,9 +275,34 @@ export function ContextToolbar() {
           </div>
         </div>
 
-        <div className="flex items-center gap-2 text-[11px] text-text-muted font-mono">
-          <span>{book?.size || "A5"} ({activePageIndex === 0 ? "Cover" : `Page ${activePageIndex + 1}`})</span>
-          <span>· Click any item on canvas to edit</span>
+        {/* View Settings & Canvas Toggles */}
+        <div className="flex items-center gap-3">
+          <div className="flex items-center border border-border rounded-[6px] h-8 bg-surface p-0.5">
+            <button
+              onClick={toggleMargins}
+              className={`px-2 h-full flex items-center gap-1.5 rounded text-[11px] font-medium transition-colors ${
+                showMargins ? "bg-accent-soft text-text" : "text-text-muted hover:text-text"
+              }`}
+              title="Toggle Safe Margins (Canva Show Margins)"
+            >
+              <SvgMargins size={14} />
+              <span>Margins</span>
+            </button>
+            <button
+              onClick={toggleBleed}
+              className={`px-2 h-full flex items-center gap-1.5 rounded text-[11px] font-medium transition-colors border-l border-border ${
+                showBleed ? "bg-accent-soft text-text" : "text-text-muted hover:text-text"
+              }`}
+              title="Toggle Print Bleed & Cut Boundary (Canva Show Print Bleed)"
+            >
+              <SvgPrintBleed size={14} />
+              <span>Bleed</span>
+            </button>
+          </div>
+
+          <div className="text-[11px] text-text-muted font-mono">
+            <span>{book?.size || "A5"} ({activePageIndex === 0 ? "Cover" : `Page ${activePageIndex + 1}`})</span>
+          </div>
         </div>
       </div>
     );
@@ -236,14 +311,14 @@ export function ContextToolbar() {
   const isLocked = primarySelected.locked;
 
   return (
-    <div className="flex h-11 shrink-0 items-center justify-between border-b border-border bg-surface px-4 z-30 select-none overflow-x-auto text-xs scrollbar-thin">
+    <div className="flex h-11 shrink-0 items-center justify-between border-b border-border bg-surface px-4 z-40 select-none text-xs overflow-visible">
       {/* Left: Element Specific Controls */}
-      <div className="flex items-center gap-2 shrink-0">
+      <div className="flex items-center gap-2 shrink-0 overflow-visible">
         {/* TEXT CONTROLS */}
         {primarySelected.type === "text" && (
           <>
-            {/* Font Picker */}
-            <div className="w-36">
+            {/* Font Picker with visible overflowing dropdown */}
+            <div className="w-44 shrink-0">
               <FontPicker
                 currentFont={(primarySelected as TextEl).font || "Playfair Display"}
                 onSelectFont={(fontName) => updateElement(primarySelected.id, { font: fontName })}
@@ -262,7 +337,7 @@ export function ContextToolbar() {
                 className="px-2 h-full hover:bg-accent-soft text-text-muted hover:text-text rounded-l"
                 title="Decrease font size"
               >
-                <Minus className="h-3 w-3" />
+                <SvgMinus size={12} />
               </button>
               <input
                 type="number"
@@ -284,7 +359,7 @@ export function ContextToolbar() {
                 className="px-2 h-full hover:bg-accent-soft text-text-muted hover:text-text rounded-r"
                 title="Increase font size"
               >
-                <Plus className="h-3 w-3" />
+                <SvgPlus size={12} />
               </button>
             </div>
 
@@ -296,7 +371,7 @@ export function ContextToolbar() {
               />
             </div>
 
-            {/* Bold, Italic, Underline */}
+            {/* Bold, Italic, Underline, Strikethrough, Uppercase (aA) */}
             <div className="flex items-center border border-border rounded-[6px] p-0.5 bg-bg h-8">
               <button
                 onClick={() =>
@@ -309,7 +384,7 @@ export function ContextToolbar() {
                 }`}
                 title="Bold"
               >
-                <Bold className="h-3.5 w-3.5" />
+                <SvgBold size={14} />
               </button>
               <button
                 onClick={() =>
@@ -322,7 +397,7 @@ export function ContextToolbar() {
                 }`}
                 title="Italic"
               >
-                <Italic className="h-3.5 w-3.5" />
+                <SvgItalic size={14} />
               </button>
               <button
                 onClick={() =>
@@ -335,7 +410,33 @@ export function ContextToolbar() {
                 }`}
                 title="Underline"
               >
-                <Underline className="h-3.5 w-3.5" />
+                <SvgUnderline size={14} />
+              </button>
+              <button
+                onClick={() =>
+                  updateElement(primarySelected.id, {
+                    strikethrough: !(primarySelected as TextEl).strikethrough,
+                  })
+                }
+                className={`p-1.5 rounded ${
+                  (primarySelected as TextEl).strikethrough ? "bg-surface shadow-xs text-text" : "text-text-muted"
+                }`}
+                title="Strikethrough"
+              >
+                <SvgStrikethrough size={14} />
+              </button>
+              <button
+                onClick={() =>
+                  updateElement(primarySelected.id, {
+                    uppercase: !(primarySelected as TextEl).uppercase,
+                  })
+                }
+                className={`p-1.5 rounded ${
+                  (primarySelected as TextEl).uppercase ? "bg-surface shadow-xs text-text font-bold" : "text-text-muted"
+                }`}
+                title="Uppercase toggle (aA)"
+              >
+                <SvgUppercase size={14} />
               </button>
             </div>
 
@@ -348,7 +449,7 @@ export function ContextToolbar() {
                 }`}
                 title="Align Left"
               >
-                <AlignLeft className="h-3.5 w-3.5" />
+                <SvgAlignLeft size={14} />
               </button>
               <button
                 onClick={() => updateElement(primarySelected.id, { align: "center" })}
@@ -357,7 +458,7 @@ export function ContextToolbar() {
                 }`}
                 title="Align Center"
               >
-                <AlignCenter className="h-3.5 w-3.5" />
+                <SvgAlignCenter size={14} />
               </button>
               <button
                 onClick={() => updateElement(primarySelected.id, { align: "right" })}
@@ -366,7 +467,7 @@ export function ContextToolbar() {
                 }`}
                 title="Align Right"
               >
-                <AlignRight className="h-3.5 w-3.5" />
+                <SvgAlignRight size={14} />
               </button>
               <button
                 onClick={() => updateElement(primarySelected.id, { align: "justify" })}
@@ -375,7 +476,7 @@ export function ContextToolbar() {
                 }`}
                 title="Justify"
               >
-                <AlignJustify className="h-3.5 w-3.5" />
+                <SvgAlignJustify size={14} />
               </button>
             </div>
 
@@ -388,7 +489,8 @@ export function ContextToolbar() {
                 className="h-8 text-xs gap-1"
                 title="Line height and letter spacing"
               >
-                <Sliders className="h-3.5 w-3.5" /> Spacing
+                <SvgSpacing size={14} />
+                <span>Spacing</span>
               </Button>
 
               {isSpacingOpen && (
@@ -426,31 +528,126 @@ export function ContextToolbar() {
                 </div>
               )}
             </div>
+
+            {/* TEXT EFFECTS (Canva-style: Hollow/Knockout, Shadow, Lift, Neon, Background Pill) */}
+            <div className="relative" ref={effectsRef}>
+              <Button
+                variant={(primarySelected as TextEl).effect && (primarySelected as TextEl).effect !== "none" ? "default" : "outline"}
+                size="sm"
+                onClick={() => setIsEffectsOpen(!isEffectsOpen)}
+                className="h-8 text-xs gap-1"
+                title="Text Effects & Font Transparency Modes"
+              >
+                <SvgTextEffects size={14} />
+                <span>Effects</span>
+              </Button>
+
+              {isEffectsOpen && (
+                <div className="absolute left-0 top-full mt-1.5 w-64 rounded-[10px] border border-border bg-surface p-3 shadow-card z-50 animate-in fade-in-50 zoom-in-95 space-y-3">
+                  <div className="text-[10px] font-semibold uppercase tracking-wider text-text-muted">
+                    Typography Effects
+                  </div>
+
+                  {/* Effects Grid */}
+                  <div className="grid grid-cols-3 gap-1.5">
+                    {[
+                      { id: "none", label: "None", desc: "Solid font" },
+                      { id: "hollow", label: "Hollow", desc: "Transparent fill with outline" },
+                      { id: "shadow", label: "Shadow", desc: "Soft drop shadow" },
+                      { id: "lift", label: "Lift", desc: "Ambient blur" },
+                      { id: "neon", label: "Neon", desc: "Glowing aura" },
+                      { id: "background", label: "Pill Box", desc: "Translucent backdrop" },
+                    ].map((eff) => (
+                      <button
+                        key={eff.id}
+                        onClick={() => {
+                          const isNowHollow = eff.id === "hollow";
+                          const bgPillData =
+                            eff.id === "background"
+                              ? (primarySelected as TextEl).bgPill || {
+                                  color: "#FFFFFF",
+                                  opacity: 0.75,
+                                  radius: 4,
+                                }
+                              : undefined;
+
+                          updateElement(primarySelected.id, {
+                            effect: eff.id as any,
+                            isHollow: isNowHollow,
+                            bgPill: bgPillData,
+                          });
+                        }}
+                        className={`flex flex-col items-center justify-center p-2 rounded border text-center transition-all ${
+                          (primarySelected as TextEl).effect === eff.id ||
+                          (eff.id === "none" && !(primarySelected as TextEl).effect)
+                            ? "border-accent bg-accent-soft font-semibold text-text"
+                            : "border-border hover:bg-accent-soft/30 text-text-muted"
+                        }`}
+                      >
+                        <span className="text-[11px]">{eff.label}</span>
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Sub-controls for Background Pill */}
+                  {(primarySelected as TextEl).effect === "background" && (
+                    <div className="pt-2 border-t border-border space-y-2">
+                      <div className="flex items-center justify-between text-[11px] text-text">
+                        <span>Pill Backdrop Opacity</span>
+                        <span className="font-mono text-text-muted">
+                          {Math.round(((primarySelected as TextEl).bgPill?.opacity ?? 0.75) * 100)}%
+                        </span>
+                      </div>
+                      <input
+                        type="range"
+                        min="0"
+                        max="100"
+                        step="1"
+                        value={Math.round(((primarySelected as TextEl).bgPill?.opacity ?? 0.75) * 100)}
+                        onChange={(e) => {
+                          const op = Number(e.target.value) / 100;
+                          const currentPill = (primarySelected as TextEl).bgPill || { color: "#FFFFFF", radius: 4 };
+                          updateElement(primarySelected.id, {
+                            bgPill: { ...currentPill, opacity: op },
+                          });
+                        }}
+                        className="w-full accent-accent cursor-pointer"
+                      />
+                    </div>
+                  )}
+
+                  {/* Sub-controls for Hollow */}
+                  {(primarySelected as TextEl).effect === "hollow" && (
+                    <div className="text-[10px] text-text-muted bg-accent-soft/40 p-2 rounded">
+                      Interior of letters is 100% transparent/clear. Adjust text color to change outline stroke.
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
           </>
         )}
 
         {/* IMAGE CONTROLS */}
         {primarySelected.type === "image" && (
-          <>
-            <div className="flex items-center gap-1.5">
-              <Button
-                variant={(primarySelected as ImageEl).frame === "none" || !(primarySelected as ImageEl).frame ? "default" : "outline"}
-                size="sm"
-                className="h-8 text-xs"
-                onClick={() => updateElement(primarySelected.id, { frame: "none" })}
-              >
-                Standard
-              </Button>
-              <Button
-                variant={(primarySelected as ImageEl).frame === "polaroid" ? "default" : "outline"}
-                size="sm"
-                className="h-8 text-xs"
-                onClick={() => updateElement(primarySelected.id, { frame: "polaroid" })}
-              >
-                Polaroid
-              </Button>
-            </div>
-          </>
+          <div className="flex items-center gap-1.5">
+            <Button
+              variant={(primarySelected as ImageEl).frame === "none" || !(primarySelected as ImageEl).frame ? "default" : "outline"}
+              size="sm"
+              className="h-8 text-xs"
+              onClick={() => updateElement(primarySelected.id, { frame: "none" })}
+            >
+              Standard
+            </Button>
+            <Button
+              variant={(primarySelected as ImageEl).frame === "polaroid" ? "default" : "outline"}
+              size="sm"
+              className="h-8 text-xs"
+              onClick={() => updateElement(primarySelected.id, { frame: "polaroid" })}
+            >
+              Polaroid
+            </Button>
+          </div>
         )}
 
         {/* SHAPE CONTROLS */}
@@ -490,6 +687,24 @@ export function ContextToolbar() {
           </div>
         )}
 
+        {/* FLIP CONTROLS (Images, Shapes, Text) */}
+        <div className="flex items-center border border-border rounded-[6px] h-8 bg-surface">
+          <button
+            onClick={flipHorizontalSelected}
+            className="px-2 h-full hover:bg-accent-soft text-text-muted hover:text-text rounded-l"
+            title="Flip Horizontal (Mirror)"
+          >
+            <SvgFlipHorizontal size={14} />
+          </button>
+          <button
+            onClick={flipVerticalSelected}
+            className="px-2 h-full hover:bg-accent-soft text-text-muted hover:text-text border-l border-border rounded-r"
+            title="Flip Vertical"
+          >
+            <SvgFlipVertical size={14} />
+          </button>
+        </div>
+
         <div className="h-4 w-px bg-border mx-1" />
 
         {/* BORDER POPOVER (For Text & Image) */}
@@ -502,7 +717,8 @@ export function ContextToolbar() {
               className="h-8 text-xs gap-1"
               title="Add or style border"
             >
-              <Square className="h-3.5 w-3.5" /> Border
+              <SvgBorder size={14} />
+              <span>Border</span>
             </Button>
 
             {isBorderOpen && (
@@ -555,36 +771,55 @@ export function ContextToolbar() {
                   />
                 </div>
 
-                <div className="flex items-center gap-1.5 pt-1">
-                  <button
-                    onClick={() => {
-                      const currentBorder = (primarySelected as TextEl | ImageEl).border;
-                      updateElement(primarySelected.id, {
-                        border: { ...currentBorder, w: currentBorder?.w || 1, color: currentBorder?.color || "#1A1A1A", style: "solid" },
-                      });
-                    }}
-                    className="flex-1 py-1 text-xs border rounded text-center hover:bg-accent-soft"
-                  >
-                    Solid
-                  </button>
-                  <button
-                    onClick={() => {
-                      const currentBorder = (primarySelected as TextEl | ImageEl).border;
-                      updateElement(primarySelected.id, {
-                        border: { ...currentBorder, w: currentBorder?.w || 1, color: currentBorder?.color || "#1A1A1A", style: "dashed" },
-                      });
-                    }}
-                    className="flex-1 py-1 text-xs border border-dashed rounded text-center hover:bg-accent-soft"
-                  >
-                    Dashed
-                  </button>
+                <div className="space-y-1">
+                  <span className="text-[11px] text-text">Border Style</span>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => {
+                        const currentBorder = (primarySelected as TextEl | ImageEl).border;
+                        updateElement(primarySelected.id, {
+                          border: {
+                            w: currentBorder?.w || 1,
+                            color: currentBorder?.color || "#1A1A1A",
+                            style: "solid",
+                          },
+                        });
+                      }}
+                      className={`flex-1 py-1 text-xs rounded border text-center ${
+                        (primarySelected as TextEl | ImageEl).border?.style !== "dashed"
+                          ? "border-accent bg-accent-soft font-semibold text-text"
+                          : "border-border text-text-muted"
+                      }`}
+                    >
+                      Solid
+                    </button>
+                    <button
+                      onClick={() => {
+                        const currentBorder = (primarySelected as TextEl | ImageEl).border;
+                        updateElement(primarySelected.id, {
+                          border: {
+                            w: currentBorder?.w || 1,
+                            color: currentBorder?.color || "#1A1A1A",
+                            style: "dashed",
+                          },
+                        });
+                      }}
+                      className={`flex-1 py-1 text-xs rounded border text-center ${
+                        (primarySelected as TextEl | ImageEl).border?.style === "dashed"
+                          ? "border-accent bg-accent-soft font-semibold text-text"
+                          : "border-border text-text-muted"
+                      }`}
+                    >
+                      Dashed
+                    </button>
+                  </div>
                 </div>
               </div>
             )}
           </div>
         )}
 
-        {/* TRANSPARENCY / OPACITY SLIDER (All Elements: 0% to 100%) */}
+        {/* TRANSPARENCY / OPACITY SLIDER (Canva Checkerboard Icon: 0% to 100%) */}
         <div className="relative" ref={opacityRef}>
           <Button
             variant="outline"
@@ -593,8 +828,8 @@ export function ContextToolbar() {
             className="h-8 text-xs gap-1.5"
             title="Adjust transparency (0 to 100%)"
           >
-            <div className="h-3.5 w-3.5 rounded border border-current opacity-70" />
-            <span>{currentOpacityPercent}%</span>
+            <SvgTransparency size={14} className="text-text" />
+            <span className="font-mono">{currentOpacityPercent}%</span>
           </Button>
 
           {isOpacityOpen && (
@@ -619,6 +854,20 @@ export function ContextToolbar() {
             </div>
           )}
         </div>
+
+        {/* COPY STYLE (Paint Roller Tool) */}
+        <Button
+          variant={copiedStyle ? "secondary" : "outline"}
+          size="sm"
+          onClick={() => {
+            copyStyle();
+            showToast("success", "Style copied! Click any other element to paint it.");
+          }}
+          className={`h-8 text-xs gap-1 ${copiedStyle ? "border-accent text-accent" : ""}`}
+          title="Copy Style (Paint Roller) - Copy formatting to paint on another element"
+        >
+          <SvgPaintRoller size={14} />
+        </Button>
       </div>
 
       {/* Right: Arrange, Lock, Duplicate, Delete */}
@@ -630,14 +879,14 @@ export function ContextToolbar() {
             className="px-2 h-full hover:bg-accent-soft text-text-muted hover:text-text"
             title="Bring Forward"
           >
-            <ChevronUp className="h-3.5 w-3.5" />
+            <SvgLayerUp size={14} />
           </button>
           <button
             onClick={sendBackward}
             className="px-2 h-full hover:bg-accent-soft text-text-muted hover:text-text border-l border-border"
             title="Send Backward"
           >
-            <ChevronDown className="h-3.5 w-3.5" />
+            <SvgLayerDown size={14} />
           </button>
         </div>
 
@@ -649,7 +898,7 @@ export function ContextToolbar() {
           onClick={duplicateSelected}
           title="Duplicate (Ctrl+D)"
         >
-          <Copy className="h-3.5 w-3.5" />
+          <SvgDuplicate size={14} />
         </Button>
 
         {/* Lock / Unlock */}
@@ -660,7 +909,7 @@ export function ContextToolbar() {
           onClick={toggleLockSelected}
           title={isLocked ? "Unlock Element" : "Lock Element"}
         >
-          {isLocked ? <Lock className="h-3.5 w-3.5 text-danger" /> : <Unlock className="h-3.5 w-3.5 text-text-muted" />}
+          {isLocked ? <SvgLock size={14} className="text-danger" /> : <SvgUnlock size={14} className="text-text-muted" />}
         </Button>
 
         {/* Delete */}
@@ -671,7 +920,7 @@ export function ContextToolbar() {
           onClick={deleteSelected}
           title="Delete (Delete / Backspace)"
         >
-          <Trash2 className="h-3.5 w-3.5" />
+          <SvgTrash size={14} />
         </Button>
       </div>
     </div>

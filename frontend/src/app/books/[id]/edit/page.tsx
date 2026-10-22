@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth/auth-context";
 import { getThemeById } from "@/lib/themes";
 import { useEditorStore, createSamplePageElements, createSampleCoverElements } from "@/lib/editor/store";
-import { PageSize, El } from "@/lib/editor/types";
+import { PageSize, El, TextEl } from "@/lib/editor/types";
 import { loadBookFromIndexedDB, flushOfflineQueue } from "@/lib/storage/indexeddb";
 import dynamic from "next/dynamic";
 import { TopBar } from "@/components/editor/TopBar";

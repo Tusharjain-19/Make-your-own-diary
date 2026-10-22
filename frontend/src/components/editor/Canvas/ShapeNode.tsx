@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Rect, Circle, Line, Arrow, Group, Path } from "react-konva";
+import { Rect, Circle, Line, Arrow, Group, Path, Text as KonvaText } from "react-konva";
 import Konva from "konva";
 import { ShapeEl } from "@/lib/editor/types";
 import { mmToPx, pxToMm } from "@/lib/editor/units";
@@ -133,7 +133,7 @@ export const ShapeNode = React.forwardRef<Konva.Group, ShapeNodeProps>(
           />
         )}
 
-        {/* ARROW */}
+        {/* STRAIGHT ARROW */}
         {element.shape === "arrow" && (
           <Arrow
             points={[0, hPx / 2, wPx, hPx / 2]}
@@ -143,6 +143,115 @@ export const ShapeNode = React.forwardRef<Konva.Group, ShapeNodeProps>(
             pointerLength={10}
             pointerWidth={8}
             lineCap="round"
+          />
+        )}
+
+        {/* CURVED ARROW UP-RIGHT */}
+        {element.shape === "arrow-curved-up" && (
+          <Arrow
+            points={[0, hPx * 0.9, wPx * 0.45, hPx * 0.1, wPx, hPx * 0.25]}
+            tension={0.5}
+            stroke={element.stroke || element.fill || "#1A1A1A"}
+            fill={element.stroke || element.fill || "#1A1A1A"}
+            strokeWidth={Math.max(1.5, strokeWidthPx)}
+            pointerLength={10}
+            pointerWidth={8}
+            lineCap="round"
+          />
+        )}
+
+        {/* CURVED ARROW DOWN-RIGHT */}
+        {element.shape === "arrow-curved-down" && (
+          <Arrow
+            points={[0, hPx * 0.1, wPx * 0.5, hPx * 0.9, wPx, hPx * 0.75]}
+            tension={0.5}
+            stroke={element.stroke || element.fill || "#1A1A1A"}
+            fill={element.stroke || element.fill || "#1A1A1A"}
+            strokeWidth={Math.max(1.5, strokeWidthPx)}
+            pointerLength={10}
+            pointerWidth={8}
+            lineCap="round"
+          />
+        )}
+
+        {/* CURVED ARROW LOOP LEFT */}
+        {element.shape === "arrow-curved-left" && (
+          <Arrow
+            points={[wPx, hPx * 0.85, wPx * 0.6, hPx * 0.05, 0, hPx * 0.35]}
+            tension={0.5}
+            stroke={element.stroke || element.fill || "#1A1A1A"}
+            fill={element.stroke || element.fill || "#1A1A1A"}
+            strokeWidth={Math.max(1.5, strokeWidthPx)}
+            pointerLength={10}
+            pointerWidth={8}
+            lineCap="round"
+          />
+        )}
+
+        {/* CURVED ARCH ARROW */}
+        {element.shape === "arrow-curved-arch" && (
+          <Arrow
+            points={[wPx * 0.05, hPx * 0.95, wPx * 0.5, hPx * 0.05, wPx * 0.95, hPx * 0.85]}
+            tension={0.65}
+            stroke={element.stroke || element.fill || "#1A1A1A"}
+            fill={element.stroke || element.fill || "#1A1A1A"}
+            strokeWidth={Math.max(1.5, strokeWidthPx)}
+            pointerLength={10}
+            pointerWidth={8}
+            lineCap="round"
+          />
+        )}
+
+        {/* S-CURVE ARROW */}
+        {element.shape === "arrow-s-curve" && (
+          <Arrow
+            points={[0, hPx * 0.85, wPx * 0.35, hPx * 0.1, wPx * 0.65, hPx * 0.9, wPx, hPx * 0.15]}
+            tension={0.45}
+            stroke={element.stroke || element.fill || "#1A1A1A"}
+            fill={element.stroke || element.fill || "#1A1A1A"}
+            strokeWidth={Math.max(1.5, strokeWidthPx)}
+            pointerLength={10}
+            pointerWidth={8}
+            lineCap="round"
+          />
+        )}
+
+        {/* DOUBLE-HEADED CURVED ARROW */}
+        {element.shape === "arrow-double-curved" && (
+          <Group>
+            <Arrow
+              points={[wPx * 0.5, hPx * 0.1, wPx * 0.95, hPx * 0.85]}
+              tension={0.5}
+              stroke={element.stroke || element.fill || "#1A1A1A"}
+              fill={element.stroke || element.fill || "#1A1A1A"}
+              strokeWidth={Math.max(1.5, strokeWidthPx)}
+              pointerLength={10}
+              pointerWidth={8}
+              lineCap="round"
+            />
+            <Arrow
+              points={[wPx * 0.5, hPx * 0.1, wPx * 0.05, hPx * 0.85]}
+              tension={0.5}
+              stroke={element.stroke || element.fill || "#1A1A1A"}
+              fill={element.stroke || element.fill || "#1A1A1A"}
+              strokeWidth={Math.max(1.5, strokeWidthPx)}
+              pointerLength={10}
+              pointerWidth={8}
+              lineCap="round"
+            />
+          </Group>
+        )}
+
+        {/* EMOJI STICKER */}
+        {element.shape === "emoji-sticker" && (
+          <KonvaText
+            text={element.emoji || "✨"}
+            width={wPx}
+            height={hPx}
+            align="center"
+            verticalAlign="middle"
+            fontSize={Math.min(wPx, hPx) * 0.82}
+            listening={false}
           />
         )}
 

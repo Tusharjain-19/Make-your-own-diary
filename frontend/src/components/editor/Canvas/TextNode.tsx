@@ -61,6 +61,40 @@ export const TextNode = React.forwardRef<Konva.Text, TextNodeProps>(
 
     const borderWidthPx = element.border?.w ? mmToPx(element.border.w) : 0;
 
+    const displayText = element.uppercase ? element.text.toUpperCase() : element.text;
+
+    const decorations = [
+      element.underline ? "underline" : "",
+      element.strikethrough ? "line-through" : "",
+    ]
+      .filter(Boolean)
+      .join(" ");
+
+    const isHollow = element.isHollow || element.effect === "hollow";
+
+    // Text Effects (Shadow, Lift, Neon)
+    let shadowColor: string | undefined = undefined;
+    let shadowBlur = 0;
+    let shadowOffset = { x: 0, y: 0 };
+    let shadowOpacity = 0;
+
+    if (element.effect === "shadow") {
+      shadowColor = element.effectColor || "rgba(0,0,0,0.45)";
+      shadowBlur = 6;
+      shadowOffset = { x: 3, y: 3 };
+      shadowOpacity = element.effectIntensity ?? 0.8;
+    } else if (element.effect === "lift") {
+      shadowColor = element.effectColor || "rgba(0,0,0,0.3)";
+      shadowBlur = 14;
+      shadowOffset = { x: 0, y: 5 };
+      shadowOpacity = element.effectIntensity ?? 0.6;
+    } else if (element.effect === "neon") {
+      shadowColor = element.effectColor || element.color || "#00E5FF";
+      shadowBlur = 18;
+      shadowOffset = { x: 0, y: 0 };
+      shadowOpacity = 0.9;
+    }
+
     return (
       <Text
         ref={setRef}
@@ -69,21 +103,29 @@ export const TextNode = React.forwardRef<Konva.Text, TextNodeProps>(
         y={yPx}
         width={wPx}
         height={hPx}
-        text={element.text}
+        text={displayText}
         fontSize={fontSizePx}
         fontFamily={element.font || "Playfair Display"}
         fontStyle={fontStyle}
         wrap="word"
-        textDecoration={element.underline ? "underline" : ""}
-        fill={element.color || "#1A1A1A"}
+        textDecoration={decorations}
+        fill={isHollow ? "transparent" : element.color || "#1A1A1A"}
         align={element.align}
         lineHeight={element.lineHeight || 1.3}
         letterSpacing={element.letterSpacing || 0}
-        stroke={element.border?.w ? element.border.color : undefined}
-        strokeWidth={borderWidthPx}
+        stroke={isHollow ? element.color || "#1A1A1A" : element.border?.w ? element.border.color : undefined}
+        strokeWidth={isHollow ? Math.max(1, borderWidthPx || 1.5) : borderWidthPx}
         dash={element.border?.style === "dashed" ? [4, 4] : undefined}
         padding={borderWidthPx > 0 ? 4 : 0}
+        shadowColor={shadowColor}
+        shadowBlur={shadowBlur}
+        shadowOffset={shadowOffset}
+        shadowOpacity={shadowOpacity}
         rotation={element.rot || 0}
+        scaleX={element.flipX ? -1 : 1}
+        offsetX={element.flipX ? wPx : 0}
+        scaleY={element.flipY ? -1 : 1}
+        offsetY={element.flipY ? hPx : 0}
         opacity={isEditing ? 0 : element.opacity ?? 1}
         draggable={!element.locked && activeTool === "select" && !isEditing}
         onMouseDown={(e) => {
@@ -93,8 +135,6 @@ export const TextNode = React.forwardRef<Konva.Text, TextNodeProps>(
         onClick={(e) => {
           e.cancelBubble = true;
           onSelect(e.evt.shiftKey);
-          // Click directly on box to enter text
-          onDoubleClick?.();
         }}
         onDblClick={(e) => {
           e.cancelBubble = true;
@@ -103,7 +143,6 @@ export const TextNode = React.forwardRef<Konva.Text, TextNodeProps>(
         onTap={(e) => {
           e.cancelBubble = true;
           onSelect(false);
-          onDoubleClick?.();
         }}
         onDblTap={(e) => {
           e.cancelBubble = true;
