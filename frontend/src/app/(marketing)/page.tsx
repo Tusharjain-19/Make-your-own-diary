@@ -195,9 +195,7 @@ export default function MarketingLandingPage() {
       <header className="sticky top-0 z-50 w-full border-b border-surface-variant bg-surface/90 backdrop-blur-md transition-all duration-150">
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
           {/* Brand Logo & Wordmark */}
-          <Link href="/" className="flex items-center gap-2 group">
-            <StoryboundLogo size="md" />
-          </Link>
+          <StoryboundLogo size="md" className="group" />
 
           {/* Desktop Nav Links */}
           <nav className="hidden md:flex items-center space-x-7 text-sm font-medium text-on-surface-variant">

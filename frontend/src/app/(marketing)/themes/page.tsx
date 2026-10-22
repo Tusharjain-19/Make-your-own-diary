@@ -168,12 +168,10 @@ export default function ThemesGalleryPage() {
     <div className="min-h-screen bg-bg text-text selection:bg-secondary-container selection:text-primary overflow-x-hidden">
       <ScrollToTopProgress />
 
-      {/* Top Header Navigation */}
       <header className="sticky top-0 z-50 w-full border-b border-surface-variant bg-surface/90 backdrop-blur-md">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between h-16">
-          <Link href="/" className="flex items-center gap-2">
-            <StoryboundLogo size="md" />
-          </Link>
+          {/* Brand Logo */}
+          <StoryboundLogo size="md" />
 
           <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-on-surface-variant">
             <Link href="/" className="hover:text-primary transition-colors">
