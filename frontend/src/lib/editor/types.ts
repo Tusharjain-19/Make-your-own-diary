@@ -27,6 +27,7 @@ export interface TextEl extends BaseEl {
   align: "left" | "center" | "right" | "justify";
   lineHeight: number;
   letterSpacing: number;
+  border?: { w: number; color: string; radius?: number; style?: "solid" | "dashed" };
 }
 
 export interface ImageEl extends BaseEl {
@@ -37,7 +38,7 @@ export interface ImageEl extends BaseEl {
   originalHeight?: number;
   crop?: { x: number; y: number; w: number; h: number };
   frame?: "none" | "polaroid" | "round" | "arch";
-  border?: { w: number; color: string };
+  border?: { w: number; color: string; radius?: number; style?: "solid" | "dashed" };
   radius?: number;
   flipX?: boolean;
 }
@@ -54,7 +55,12 @@ export interface ShapeEl extends BaseEl {
     | "divider-rule"
     | "divider-dotted"
     | "tape"
-    | "stamp";
+    | "stamp"
+    | "cute-wavy"
+    | "cute-heart"
+    | "cute-book"
+    | "cute-seal"
+    | "cute-dots";
   fill?: string;
   stroke?: string;
   strokeW?: number;

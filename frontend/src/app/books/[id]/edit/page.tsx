@@ -7,13 +7,13 @@ import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth/auth-context";
 import { getThemeById } from "@/lib/themes";
-import { useEditorStore, createSamplePageElements } from "@/lib/editor/store";
+import { useEditorStore, createSamplePageElements, createSampleCoverElements } from "@/lib/editor/store";
 import { PageSize, El } from "@/lib/editor/types";
 import { loadBookFromIndexedDB, flushOfflineQueue } from "@/lib/storage/indexeddb";
 import dynamic from "next/dynamic";
 import { TopBar } from "@/components/editor/TopBar";
 import { LeftRail } from "@/components/editor/LeftRail";
-import { PropertiesPanel } from "@/components/editor/PropertiesPanel/PropertiesPanel";
+import { ContextToolbar } from "@/components/editor/ContextToolbar";
 import { PageStrip } from "@/components/editor/PageStrip";
 
 const PageCanvas = dynamic(
@@ -80,7 +80,18 @@ export default function BookEditorPage() {
       // Format into BookModel
       const pages = rawPages.map((p, idx) => {
         let elements: El[] = (p.data?.elements || []) as El[];
-        // For Day 5 proof of concept: if first content page (page 1, index 1) is empty, populate sample elements
+        // Pre-designed cover for Page 1 / Cover (User Request #2)
+        if (idx === 0 && (elements.length === 0 || (elements.length === 1 && (elements[0] as TextEl).text?.includes("JAIPUR")))) {
+          elements = createSampleCoverElements({
+            title: rawBook.title,
+            subtitle: rawBook.subtitle,
+            author: rawBook.author,
+            dates: rawBook.dates,
+            font: theme?.fonts.heading,
+            accent: theme?.palette.accent,
+          });
+        }
+        // First content page (page 2, index 1) sample elements
         if (idx === 1 && elements.length === 0) {
           elements = createSamplePageElements(theme?.fonts.heading || "Playfair Display");
         }
@@ -297,13 +308,15 @@ export default function BookEditorPage() {
       {/* Top Bar (56px) */}
       <TopBar />
 
-      {/* Main Workspace (Left Rail + Canvas + Properties Panel) */}
+      {/* Dynamic Contextual Toolbar (Canva-style) */}
+      <ContextToolbar />
+
+      {/* Main Workspace (Left Rail + Full Spacious Canvas) */}
       <div className="flex flex-1 overflow-hidden relative">
         <LeftRail />
         <main className="flex-1 h-full overflow-hidden relative bg-[#f4f4f2]">
           <PageCanvas />
         </main>
-        <PropertiesPanel />
       </div>
 
       {/* Bottom Page Strip (110px) */}

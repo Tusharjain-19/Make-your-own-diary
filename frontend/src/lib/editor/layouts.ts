@@ -14,12 +14,146 @@ export interface LayoutSlot {
 export interface LayoutTemplate {
   id: string;
   name: string;
-  category: "all" | "photo" | "split" | "grid" | "collage" | "text" | "diary" | "keepsake";
+  category: "all" | "cover" | "photo" | "split" | "grid" | "collage" | "text" | "diary" | "keepsake";
   desc: string;
   slots: (dim: { widthMm: number; heightMm: number; safeMarginMm: number }) => LayoutSlot[];
 }
 
 export const LAYOUT_TEMPLATES: LayoutTemplate[] = [
+  // C01: Classic Editorial Cover
+  {
+    id: "C01",
+    name: "Classic Editorial Cover",
+    category: "cover",
+    desc: "Pre-designed diary cover with title, gold divider, framed photo, and byline.",
+    slots: (dim) => [
+      {
+        type: "text",
+        role: "title",
+        x: 14,
+        y: 24,
+        w: dim.widthMm - 28,
+        h: 22,
+        defaultData: {
+          text: "Jaipur Trip 2026",
+          size: 28,
+          weight: 700,
+          color: "#1A1A1A",
+          align: "center",
+        },
+      },
+      {
+        type: "shape",
+        role: "divider",
+        x: dim.widthMm / 2 - 40,
+        y: 48,
+        w: 80,
+        h: 4,
+        defaultData: {
+          shape: "divider-rule",
+          stroke: "#B8A88A",
+          strokeW: 0.75,
+        },
+      },
+      {
+        type: "image",
+        role: "cover-photo",
+        x: 18,
+        y: 56,
+        w: dim.widthMm - 36,
+        h: 96,
+        defaultData: {
+          src: "https://images.unsplash.com/photo-1599661046289-e31897846e41?w=1200&auto=format&fit=crop&q=80",
+          radius: 3,
+        },
+      },
+      {
+        type: "text",
+        role: "subtitle",
+        x: 16,
+        y: 158,
+        w: dim.widthMm - 32,
+        h: 16,
+        defaultData: {
+          text: "Memories & Architecture of the Pink City",
+          size: 13,
+          italic: true,
+          color: "#6A5D43",
+          align: "center",
+        },
+      },
+      {
+        type: "text",
+        role: "byline",
+        x: 16,
+        y: 188,
+        w: dim.widthMm - 32,
+        h: 12,
+        defaultData: {
+          text: "By Tushar Jain · Winter 2026",
+          size: 9.5,
+          weight: 500,
+          color: "#858383",
+          align: "center",
+          letterSpacing: 1.2,
+        },
+      },
+    ],
+  },
+
+  // C02: Modern Minimalist Cover
+  {
+    id: "C02",
+    name: "Modern Minimalist Cover",
+    category: "cover",
+    desc: "Clean typography with centered polaroid keepsake photo.",
+    slots: (dim) => [
+      {
+        type: "image",
+        role: "polaroid-photo",
+        x: dim.widthMm / 2 - 40,
+        y: 35,
+        w: 80,
+        h: 96,
+        defaultData: {
+          src: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=1000&auto=format&fit=crop&q=80",
+          frame: "polaroid",
+        },
+      },
+      {
+        type: "text",
+        role: "title",
+        x: 16,
+        y: 145,
+        w: dim.widthMm - 32,
+        h: 24,
+        defaultData: {
+          text: "Jaipur Diary",
+          size: 30,
+          weight: 700,
+          color: "#1A1A1A",
+          align: "center",
+        },
+      },
+      {
+        type: "text",
+        role: "byline",
+        x: 16,
+        y: 175,
+        w: dim.widthMm - 32,
+        h: 12,
+        defaultData: {
+          text: "Volume I · Personal Keepsake",
+          size: 10,
+          weight: 400,
+          italic: true,
+          color: "#6B6B66",
+          align: "center",
+        },
+      },
+    ],
+  },
+
   // L01: Full-bleed photo
   {
     id: "L01",
@@ -919,6 +1053,22 @@ export function reflowContentToLayout(
           z: idx + 1,
         } as TextEl);
       }
+    } else if (slot.type === "shape") {
+      const defaultShapeData = (slot.defaultData || {}) as Partial<ShapeEl>;
+      result.push({
+        id: baseId,
+        type: "shape",
+        shape: defaultShapeData.shape || "divider-rule",
+        x: slot.x,
+        y: slot.y,
+        w: slot.w,
+        h: slot.h,
+        rot: slot.rot || 0,
+        z: idx + 1,
+        fill: defaultShapeData.fill,
+        stroke: defaultShapeData.stroke || themePalette?.accent || "#B8A88A",
+        strokeW: defaultShapeData.strokeW || 0.75,
+      } as ShapeEl);
     }
   });
 

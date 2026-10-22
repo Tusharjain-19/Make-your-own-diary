@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Rect, Circle, Line, Arrow, Group } from "react-konva";
+import { Rect, Circle, Line, Arrow, Group, Path } from "react-konva";
 import Konva from "konva";
 import { ShapeEl } from "@/lib/editor/types";
 import { mmToPx, pxToMm } from "@/lib/editor/units";
@@ -262,6 +262,128 @@ export const ShapeNode = React.forwardRef<Konva.Group, ShapeNodeProps>(
               height={hPx * 0.76}
               stroke={element.stroke || "#B8A88A"}
               strokeWidth={0.5}
+            />
+          </Group>
+        )}
+
+        {/* CUTE WAVY DOODLE LINE */}
+        {element.shape === "cute-wavy" && (
+          <Line
+            points={[
+              0,
+              hPx / 2,
+              wPx * 0.125,
+              hPx * 0.15,
+              wPx * 0.25,
+              hPx / 2,
+              wPx * 0.375,
+              hPx * 0.85,
+              wPx * 0.5,
+              hPx / 2,
+              wPx * 0.625,
+              hPx * 0.15,
+              wPx * 0.75,
+              hPx / 2,
+              wPx * 0.875,
+              hPx * 0.85,
+              wPx,
+              hPx / 2,
+            ]}
+            tension={0.4}
+            stroke={element.stroke || element.fill || "#C29B38"}
+            strokeWidth={Math.max(1.5, strokeWidthPx)}
+            lineCap="round"
+            lineJoin="round"
+          />
+        )}
+
+        {/* CUTE STATIONERY HEART */}
+        {element.shape === "cute-heart" && (
+          <Group>
+            <Path
+              data="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
+              scaleX={wPx / 24}
+              scaleY={hPx / 24}
+              fill={element.fill || "#F5D0D5"}
+              stroke={element.stroke || "#C96D7C"}
+              strokeWidth={Math.max(0.5, strokeWidthPx * (24 / Math.max(wPx, hPx, 1)))}
+            />
+          </Group>
+        )}
+
+        {/* CUTE STORYBOUND BOOK LOGO EMBLEM */}
+        {element.shape === "cute-book" && (
+          <Group>
+            <Path
+              data="M21 5c-1.11-.35-2.33-.5-3.5-.5-1.95 0-4.05.4-5.5 1.5-1.45-1.1-3.55-1.5-5.5-1.5S2.45 4.9 1 6v14.65c0 .25.25.5.5.5.1 0 .15-.05.25-.05C3.1 20.45 5.05 20 6.5 20c1.95 0 4.05.4 5.5 1.5 1.35-.85 3.8-1.5 5.5-1.5 1.65 0 3.35.3 4.75 1.05.1.05.15.05.25.05.25 0 .5-.25.5-.5V6c-.6-.45-1.25-.75-2-1zm-1 14c-1.2-.45-2.55-.5-3.5-.5-1.95 0-4.05.4-5.5 1.5V7c1.45-1.1 3.55-1.5 5.5-1.5 1.2 0 2.4.15 3.5.5v13z"
+              scaleX={wPx / 24}
+              scaleY={hPx / 24}
+              fill={element.fill || "#C29B38"}
+              stroke={element.stroke}
+              strokeWidth={element.stroke ? strokeWidthPx : 0}
+            />
+          </Group>
+        )}
+
+        {/* CUTE VINTAGE WAX SEAL / EMBOSSED BADGE */}
+        {element.shape === "cute-seal" && (
+          <Group>
+            <Circle
+              x={wPx / 2}
+              y={hPx / 2}
+              radius={Math.min(wPx, hPx) / 2}
+              fill={element.fill || "#8B2635"}
+              stroke={element.stroke || "#631722"}
+              strokeWidth={Math.max(1.5, strokeWidthPx)}
+              shadowColor="rgba(0,0,0,0.18)"
+              shadowBlur={6}
+              shadowOffset={{ x: 0, y: 2 }}
+            />
+            {/* Inner dashed ring */}
+            <Circle
+              x={wPx / 2}
+              y={hPx / 2}
+              radius={Math.min(wPx, hPx) * 0.4}
+              stroke="#E8A87C"
+              strokeWidth={1}
+              dash={[3, 3]}
+            />
+            {/* Center crown / fleur motif */}
+            <Path
+              data="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
+              x={wPx / 2 - (wPx * 0.3) / 2}
+              y={hPx / 2 - (hPx * 0.3) / 2}
+              scaleX={(wPx * 0.3) / 24}
+              scaleY={(hPx * 0.3) / 24}
+              fill="#E8A87C"
+            />
+          </Group>
+        )}
+
+        {/* CUTE DOTTED TRAIL WITH HEART */}
+        {element.shape === "cute-dots" && (
+          <Group>
+            <Line
+              points={[0, hPx / 2, wPx * 0.42, hPx / 2]}
+              stroke={element.stroke || "#C96D7C"}
+              strokeWidth={1.5}
+              dash={[3, 4]}
+              lineCap="round"
+            />
+            <Path
+              data="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
+              x={wPx * 0.45}
+              y={hPx / 2 - (Math.min(wPx, hPx) * 0.4) / 2}
+              scaleX={(Math.min(wPx, hPx) * 0.4) / 24}
+              scaleY={(Math.min(wPx, hPx) * 0.4) / 24}
+              fill={element.fill || "#C96D7C"}
+            />
+            <Line
+              points={[wPx * 0.58, hPx / 2, wPx, hPx / 2]}
+              stroke={element.stroke || "#C96D7C"}
+              strokeWidth={1.5}
+              dash={[3, 4]}
+              lineCap="round"
             />
           </Group>
         )}

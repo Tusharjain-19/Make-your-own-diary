@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { immer } from "zustand/middleware/immer";
-import { BookModel, El, PageData, TextEl, ImageEl } from "./types";
+import { BookModel, El, PageData, TextEl, ImageEl, ShapeEl } from "./types";
 import { saveBookToIndexedDB, enqueueOfflineSave } from "@/lib/storage/indexeddb";
 
 export type PanelType = "themes" | "layouts" | "uploads" | "text" | "elements" | "handwriting" | null;
@@ -606,4 +606,135 @@ export function createSamplePageElements(themeHeadingFont = "Playfair Display"):
   };
 
   return [sampleImage, sampleHeading, sampleBody];
+}
+
+// Pre-designed cover elements for Page 1 / Cover (Day 6+ / User request #2)
+export function createSampleCoverElements(options?: {
+  title?: string;
+  subtitle?: string;
+  author?: string;
+  dates?: string;
+  font?: string;
+  accent?: string;
+}): El[] {
+  const headingFont = options?.font || "Playfair Display";
+  const accentColor = options?.accent || "#B8A88A";
+  const bookTitle = options?.title || "Jaipur Trip 2026";
+  const bookSubtitle = options?.subtitle || "Memories & Architecture of the Pink City";
+  const authorName = options?.author ? `By ${options.author}` : "By Tushar Jain";
+  const editionYear = options?.dates || "Winter 2026 · Limited Edition";
+
+  // 1. Cover Title
+  const coverTitle: TextEl = {
+    id: "cover-title-1",
+    type: "text",
+    text: bookTitle,
+    font: headingFont,
+    size: 28,
+    weight: 700,
+    color: "#1A1A1A",
+    align: "center",
+    lineHeight: 1.15,
+    letterSpacing: 0.5,
+    x: 14,
+    y: 24,
+    w: 120,
+    h: 22,
+    rot: 0,
+    z: 2,
+    themeToken: "primary",
+  };
+
+  // 2. Gold Flourish Divider
+  const goldDivider: ShapeEl = {
+    id: "cover-divider-1",
+    type: "shape",
+    shape: "divider-rule",
+    x: 34,
+    y: 48,
+    w: 80,
+    h: 4,
+    rot: 0,
+    z: 3,
+    stroke: accentColor,
+    strokeW: 0.75,
+    themeToken: "accent",
+  };
+
+  // 3. Hero Cover Keepsake Photo
+  const coverHero: ImageEl = {
+    id: "cover-hero-1",
+    type: "image",
+    src: "https://images.unsplash.com/photo-1599661046289-e31897846e41?w=1200&auto=format&fit=crop&q=80",
+    x: 18,
+    y: 56,
+    w: 112,
+    h: 96,
+    rot: 0,
+    z: 1,
+    frame: "none",
+    radius: 3,
+    border: { w: 0.8, color: "#D4D0C8", style: "solid" },
+    opacity: 1,
+  };
+
+  // 4. Subtitle
+  const coverSubtitle: TextEl = {
+    id: "cover-subtitle-1",
+    type: "text",
+    text: bookSubtitle,
+    font: headingFont,
+    size: 13,
+    weight: 400,
+    italic: true,
+    color: "#6A5D43",
+    align: "center",
+    lineHeight: 1.3,
+    letterSpacing: 0,
+    x: 16,
+    y: 158,
+    w: 116,
+    h: 16,
+    rot: 0,
+    z: 4,
+    themeToken: "accent",
+  };
+
+  // 5. Cute Storybound Book Emblem
+  const coverEmblem: ShapeEl = {
+    id: "cover-emblem-1",
+    type: "shape",
+    shape: "cute-book",
+    x: 64,
+    y: 176,
+    w: 20,
+    h: 16,
+    rot: 0,
+    z: 5,
+    fill: accentColor,
+    themeToken: "accent",
+  };
+
+  // 6. Author & Edition Line
+  const coverAuthor: TextEl = {
+    id: "cover-author-1",
+    type: "text",
+    text: `${authorName} · ${editionYear}`,
+    font: "Inter",
+    size: 9.5,
+    weight: 500,
+    color: "#858383",
+    align: "center",
+    lineHeight: 1.4,
+    letterSpacing: 1.2,
+    x: 16,
+    y: 194,
+    w: 116,
+    h: 10,
+    rot: 0,
+    z: 6,
+    themeToken: "muted",
+  };
+
+  return [coverTitle, goldDivider, coverHero, coverSubtitle, coverEmblem, coverAuthor];
 }

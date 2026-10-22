@@ -511,6 +511,67 @@ export default function KonvaStage() {
             return null;
           })}
 
+          {/* PAGE BOUNDARY CUT & TRANSLUCENT OVERFLOW MATTE */}
+          {/* Top matte */}
+          <Rect
+            x={-3000}
+            y={-3000}
+            width={pageWidthPx + 6000}
+            height={3000}
+            fill="rgba(244, 244, 242, 0.76)"
+            listening={false}
+          />
+          {/* Bottom matte */}
+          <Rect
+            x={-3000}
+            y={pageHeightPx}
+            width={pageWidthPx + 6000}
+            height={3000}
+            fill="rgba(244, 244, 242, 0.76)"
+            listening={false}
+          />
+          {/* Left matte */}
+          <Rect
+            x={-3000}
+            y={0}
+            width={3000}
+            height={pageHeightPx}
+            fill="rgba(244, 244, 242, 0.76)"
+            listening={false}
+          />
+          {/* Right matte */}
+          <Rect
+            x={pageWidthPx}
+            y={0}
+            width={3000}
+            height={pageHeightPx}
+            fill="rgba(244, 244, 242, 0.76)"
+            listening={false}
+          />
+
+          {/* Page Trim Cut Boundary (Dashed Magenta/Coral) */}
+          <Rect
+            x={0}
+            y={0}
+            width={pageWidthPx}
+            height={pageHeightPx}
+            stroke="#FF2D95"
+            strokeWidth={1 / zoom}
+            dash={[6 / zoom, 4 / zoom]}
+            opacity={0.8}
+            listening={false}
+          />
+
+          {/* Corner Crop Marks */}
+          <Line points={[-12, 0, 0, 0]} stroke="#FF2D95" strokeWidth={1.2 / zoom} listening={false} />
+          <Line points={[0, -12, 0, 0]} stroke="#FF2D95" strokeWidth={1.2 / zoom} listening={false} />
+          <Line points={[pageWidthPx, 0, pageWidthPx + 12, 0]} stroke="#FF2D95" strokeWidth={1.2 / zoom} listening={false} />
+          <Line points={[pageWidthPx, -12, pageWidthPx, 0]} stroke="#FF2D95" strokeWidth={1.2 / zoom} listening={false} />
+          <Line points={[-12, pageHeightPx, 0, pageHeightPx]} stroke="#FF2D95" strokeWidth={1.2 / zoom} listening={false} />
+          <Line points={[0, pageHeightPx, 0, pageHeightPx + 12]} stroke="#FF2D95" strokeWidth={1.2 / zoom} listening={false} />
+          <Line points={[pageWidthPx, pageHeightPx, pageWidthPx + 12, pageHeightPx]} stroke="#FF2D95" strokeWidth={1.2 / zoom} listening={false} />
+          <Line points={[pageWidthPx, pageHeightPx, pageWidthPx, pageHeightPx + 12]} stroke="#FF2D95" strokeWidth={1.2 / zoom} listening={false} />
+
           {/* Konva Transformer Selection Box */}
           <Transformer
             ref={transformerRef}

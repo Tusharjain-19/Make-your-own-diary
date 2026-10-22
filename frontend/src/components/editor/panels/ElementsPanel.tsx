@@ -10,6 +10,9 @@ import {
   Stamp,
   Bookmark,
   Sparkles,
+  Heart,
+  BookOpen,
+  Award,
 } from "lucide-react";
 import { useEditorStore } from "@/lib/editor/store";
 import { ShapeEl, IconEl } from "@/lib/editor/types";
@@ -18,7 +21,7 @@ import { themes } from "@/lib/themes";
 
 export function ElementsPanel() {
   const { addElement, book } = useEditorStore();
-  const [activeTab, setActiveTab] = React.useState<"shapes" | "frames" | "dividers" | "icons">("shapes");
+  const [activeTab, setActiveTab] = React.useState<"shapes" | "frames" | "dividers" | "cute" | "icons">("shapes");
   const [iconCategory, setIconCategory] = React.useState<"all" | "travel" | "decor" | "writing">("all");
 
   const currentTheme = themes.find((t) => t.id === book?.themeId) || themes[0];
@@ -38,18 +41,30 @@ export function ElementsPanel() {
       w:
         shape === "line" || shape === "divider-rule" || shape === "divider-dotted"
           ? 90
+          : shape === "cute-wavy" || shape === "cute-dots"
+          ? 75
           : shape === "tape"
           ? 45
           : shape === "frame-polaroid"
           ? 70
+          : shape === "cute-heart" || shape === "cute-book"
+          ? 26
+          : shape === "cute-seal"
+          ? 32
           : 50,
       h:
         shape === "line" || shape === "divider-rule" || shape === "divider-dotted"
           ? 4
+          : shape === "cute-wavy" || shape === "cute-dots"
+          ? 8
           : shape === "tape"
           ? 12
           : shape === "frame-polaroid"
           ? 85
+          : shape === "cute-heart" || shape === "cute-book"
+          ? 24
+          : shape === "cute-seal"
+          ? 32
           : 50,
       rot: shape === "tape" ? -3 : 0,
       z: 2,
@@ -60,14 +75,24 @@ export function ElementsPanel() {
           ? "#F4F1EA"
           : shape === "stamp"
           ? "#FFF9F0"
+          : shape === "cute-heart"
+          ? "#F5D0D5"
+          : shape === "cute-book"
+          ? accentColor
+          : shape === "cute-seal"
+          ? "#8B2635"
           : "#F0EEE9",
       stroke:
         shape === "line" || shape === "divider-rule" || shape === "divider-dotted"
           ? accentColor
+          : shape === "cute-wavy"
+          ? accentColor
+          : shape === "cute-heart" || shape === "cute-dots"
+          ? "#C96D7C"
           : shape === "stamp"
           ? accentColor
           : "#D4D0C8",
-      strokeW: 0.75,
+      strokeW: shape === "cute-wavy" ? 1.5 : 0.75,
       opacity: shape === "tape" ? 0.88 : 1,
       themeToken: "accent",
       ...options,
@@ -114,6 +139,7 @@ export function ElementsPanel() {
           { id: "shapes", label: "Shapes" },
           { id: "frames", label: "Frames" },
           { id: "dividers", label: "Dividers" },
+          { id: "cute", label: "Cute" },
           { id: "icons", label: "Icons" },
         ].map((tab) => (
           <button
@@ -247,7 +273,88 @@ export function ElementsPanel() {
         </div>
       )}
 
-      {/* TAB 4: ICONS (SVG with currentColor) */}
+      {/* TAB 4: CUTE & STATIONERY */}
+      {activeTab === "cute" && (
+        <div className="space-y-2.5">
+          {/* Cute Wavy Doodle Line */}
+          <button
+            onClick={() => handleAddShape("cute-wavy")}
+            className="flex w-full items-center gap-3 rounded-[8px] border border-border bg-surface p-3 text-left hover:bg-accent-soft/40 transition-all"
+          >
+            <div className="flex h-10 w-12 items-center justify-center rounded border border-border bg-[#FFFDF9] shadow-xs">
+              <svg className="h-6 w-8 text-[#C29B38]" viewBox="0 0 100 24" fill="none" stroke="currentColor" strokeWidth="4">
+                <path d="M 0,12 Q 12.5,0 25,12 T 50,12 T 75,12 T 100,12" strokeLinecap="round" />
+              </svg>
+            </div>
+            <div>
+              <div className="text-xs font-medium text-text">Cute Wavy Doodle Line</div>
+              <div className="text-[10px] text-text-muted">Playful hand-drawn sine wave separator</div>
+            </div>
+          </button>
+
+          {/* Cute Stationery Heart */}
+          <button
+            onClick={() => handleAddShape("cute-heart")}
+            className="flex w-full items-center gap-3 rounded-[8px] border border-border bg-surface p-3 text-left hover:bg-accent-soft/40 transition-all"
+          >
+            <div className="flex h-10 w-12 items-center justify-center rounded border border-border bg-[#FFF0F2] shadow-xs">
+              <Heart className="h-5 w-5 fill-[#F5D0D5] text-[#C96D7C]" />
+            </div>
+            <div>
+              <div className="text-xs font-medium text-text">Cute Stationery Heart</div>
+              <div className="text-[10px] text-text-muted">Soft blush pastel keepsake heart</div>
+            </div>
+          </button>
+
+          {/* Cute Storybound Book Emblem */}
+          <button
+            onClick={() => handleAddShape("cute-book")}
+            className="flex w-full items-center gap-3 rounded-[8px] border border-border bg-surface p-3 text-left hover:bg-accent-soft/40 transition-all"
+          >
+            <div className="flex h-10 w-12 items-center justify-center rounded border border-border bg-[#F9F7F2] shadow-xs">
+              <BookOpen className="h-5 w-5 text-accent" />
+            </div>
+            <div>
+              <div className="text-xs font-medium text-text">Storybound Book Emblem</div>
+              <div className="text-[10px] text-text-muted">Handcrafted open diary logo stamp</div>
+            </div>
+          </button>
+
+          {/* Cute Vintage Wax Seal */}
+          <button
+            onClick={() => handleAddShape("cute-seal")}
+            className="flex w-full items-center gap-3 rounded-[8px] border border-border bg-surface p-3 text-left hover:bg-accent-soft/40 transition-all"
+          >
+            <div className="flex h-10 w-12 items-center justify-center rounded border border-border bg-[#8B2635] shadow-xs">
+              <Award className="h-5 w-5 text-[#E8A87C]" />
+            </div>
+            <div>
+              <div className="text-xs font-medium text-text">Vintage Wax Seal Badge</div>
+              <div className="text-[10px] text-text-muted">Deep crimson royal wax seal with emblem</div>
+            </div>
+          </button>
+
+          {/* Cute Dotted Heart Trail */}
+          <button
+            onClick={() => handleAddShape("cute-dots")}
+            className="flex w-full items-center gap-3 rounded-[8px] border border-border bg-surface p-3 text-left hover:bg-accent-soft/40 transition-all"
+          >
+            <div className="flex h-10 w-12 items-center justify-center rounded border border-border bg-surface shadow-xs">
+              <div className="flex items-center gap-1">
+                <span className="text-[#C96D7C] text-xs">···</span>
+                <Heart className="h-3 w-3 fill-[#C96D7C] text-[#C96D7C]" />
+                <span className="text-[#C96D7C] text-xs">···</span>
+              </div>
+            </div>
+            <div>
+              <div className="text-xs font-medium text-text">Dotted Heart Trail</div>
+              <div className="text-[10px] text-text-muted">Whimsical dotted flourish with center heart</div>
+            </div>
+          </button>
+        </div>
+      )}
+
+      {/* TAB 5: ICONS (SVG with currentColor) */}
       {activeTab === "icons" && (
         <div className="space-y-3">
           {/* Subcategory Pills */}

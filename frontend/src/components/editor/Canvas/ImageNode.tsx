@@ -143,6 +143,7 @@ export const ImageNode = React.forwardRef<Konva.Group, ImageNodeProps>(
             cornerRadius={element.radius || 0}
             stroke={element.border?.color}
             strokeWidth={element.border ? mmToPx(element.border.w) : 0}
+            dash={element.border?.style === "dashed" ? [6, 4] : undefined}
           />
         ) : (
           <Rect
@@ -152,6 +153,9 @@ export const ImageNode = React.forwardRef<Konva.Group, ImageNodeProps>(
             height={imgHeight}
             fill="#EFECE6"
             cornerRadius={element.radius || 0}
+            stroke={element.border?.color}
+            strokeWidth={element.border ? mmToPx(element.border.w) : 0}
+            dash={element.border?.style === "dashed" ? [6, 4] : undefined}
           />
         )}
       </Group>

@@ -59,6 +59,8 @@ export const TextNode = React.forwardRef<Konva.Text, TextNodeProps>(
       }
     };
 
+    const borderWidthPx = element.border?.w ? mmToPx(element.border.w) : 0;
+
     return (
       <Text
         ref={setRef}
@@ -71,11 +73,16 @@ export const TextNode = React.forwardRef<Konva.Text, TextNodeProps>(
         fontSize={fontSizePx}
         fontFamily={element.font || "Playfair Display"}
         fontStyle={fontStyle}
+        wrap="word"
         textDecoration={element.underline ? "underline" : ""}
         fill={element.color || "#1A1A1A"}
         align={element.align}
         lineHeight={element.lineHeight || 1.3}
         letterSpacing={element.letterSpacing || 0}
+        stroke={element.border?.w ? element.border.color : undefined}
+        strokeWidth={borderWidthPx}
+        dash={element.border?.style === "dashed" ? [4, 4] : undefined}
+        padding={borderWidthPx > 0 ? 4 : 0}
         rotation={element.rot || 0}
         opacity={isEditing ? 0 : element.opacity ?? 1}
         draggable={!element.locked && activeTool === "select" && !isEditing}
@@ -86,6 +93,8 @@ export const TextNode = React.forwardRef<Konva.Text, TextNodeProps>(
         onClick={(e) => {
           e.cancelBubble = true;
           onSelect(e.evt.shiftKey);
+          // Click directly on box to enter text
+          onDoubleClick?.();
         }}
         onDblClick={(e) => {
           e.cancelBubble = true;
@@ -94,6 +103,7 @@ export const TextNode = React.forwardRef<Konva.Text, TextNodeProps>(
         onTap={(e) => {
           e.cancelBubble = true;
           onSelect(false);
+          onDoubleClick?.();
         }}
         onDblTap={(e) => {
           e.cancelBubble = true;
@@ -106,6 +116,17 @@ export const TextNode = React.forwardRef<Konva.Text, TextNodeProps>(
           const finalX = pxToMm(e.target.x());
           const finalY = pxToMm(e.target.y());
           onDragEnd(finalX, finalY);
+        }}
+        onTransform={() => {
+          const node = textRef.current;
+          if (!node) return;
+          // Live word wrapping while dragging resize handles!
+          const scaleX = node.scaleX();
+          node.setAttrs({
+            width: Math.max(20, node.width() * scaleX),
+            scaleX: 1,
+            scaleY: 1,
+          });
         }}
         onTransformEnd={() => {
           const node = textRef.current;
