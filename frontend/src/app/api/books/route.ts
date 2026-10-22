@@ -11,7 +11,7 @@ export async function POST(request: NextRequest) {
       dates = "",
       bookType = "Travel Diary",
       size = "A5",
-      themeId = "minimal-memories",
+      themeId = "warm-editorial",
       userId = "user-default",
     } = body;
 
@@ -47,7 +47,7 @@ export async function POST(request: NextRequest) {
       bookId,
       position: index + 1,
       data: {
-        bg: "var(--bg)",
+        bg: "#FAFAF8",
         layoutId: index === 0 ? "L07" : index === 1 ? "L01" : index === 2 ? "L02" : "L03",
         elements: [],
       },

@@ -1,13 +1,13 @@
 [
   {
-    "id": "minimal-memories",
-    "name": "Minimal Memories",
+    "id": "warm-editorial",
+    "name": "Warm Editorial Stationery",
     "palette": {
-      "bg": "#FFFFFF",
-      "surface": "#F4F1EA",
-      "primary": "#1A1A1A",
+      "bg": "#FAFAF8",
+      "surface": "#FFFFFF",
+      "primary": "#1A1C1B",
       "accent": "#B8A88A",
-      "text": "#1A1A1A",
+      "text": "#1A1C1B",
       "muted": "#6B6B66"
     },
     "fonts": {
@@ -15,10 +15,10 @@
       "body": "Inter",
       "accent": "Playfair Display"
     },
-    "defaults": { "marginMm": 10, "headingSize": 32, "bodySize": 10, "lineHeight": 1.5 },
+    "defaults": { "marginMm": 10, "headingSize": 32, "bodySize": 10, "lineHeight": 1.6 },
     "layouts": ["L01", "L02", "L03", "L04", "L08", "L13", "L14"],
-    "decor": ["thin-border", "minimal-line"],
-    "cover": { "templates": ["minimal-cover-a", "minimal-cover-b"] }
+    "decor": ["hairline-border", "warm-bookmark", "cotton-texture"],
+    "cover": { "templates": ["warm-cover-a", "warm-cover-b"] }
   },
   {
     "id": "vintage-journal",

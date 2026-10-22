@@ -47,7 +47,10 @@ export const themes: ThemeDefinition[] = themesData as ThemeDefinition[];
 export const layouts: LayoutDefinition[] = layoutsData as LayoutDefinition[];
 
 export function getThemeById(id: string): ThemeDefinition | undefined {
-  return themes.find((t) => t.id === id);
+  if (id === "minimal-memories") {
+    return themes.find((t) => t.id === "warm-editorial") || themes[0];
+  }
+  return themes.find((t) => t.id === id) || themes[0];
 }
 
 export function getLayoutById(id: string): LayoutDefinition | undefined {

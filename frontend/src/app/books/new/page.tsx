@@ -76,7 +76,7 @@ const SIZES = [
 function WizardForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const initialThemeId = searchParams.get("theme") || "minimal-memories";
+  const initialThemeId = searchParams.get("theme") || "warm-editorial";
 
   const { user, createBook } = useAuth();
 

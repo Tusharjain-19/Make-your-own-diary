@@ -4,45 +4,87 @@
 
 @layer base {
   :root {
-    /* Storybound Design Tokens from designtemplete.md */
-    --bg: #FAFAF8;
-    --surface: #FFFFFF;
-    --border: #E8E6E1;
-    --text: #1A1A1A;
-    --text-muted: #6B6B66;
-    --accent: #1A1A1A;          /* buttons: black, minimal */
-    --accent-soft: #F0EEE9;
-    --success: #2F7D5B;
-    --danger: #C0392B;
+    /* Warm Editorial Stationery Design Tokens */
+    --surface: #ffffff;
+    --surface-dim: #dadad8;
+    --surface-bright: #f9f9f7;
+    --surface-container-lowest: #ffffff;
+    --surface-container-low: #f4f4f2;
+    --surface-container: #eeeeec;
+    --surface-container-high: #e8e8e6;
+    --surface-container-highest: #e2e3e1;
+    --on-surface: #1a1c1b;
+    --on-surface-variant: #444748;
+    --inverse-surface: #2f3130;
+    --inverse-on-surface: #f1f1ef;
+    --outline: #747878;
+    --outline-variant: #c4c7c7;
+    --surface-tint: #5f5e5e;
+
+    --primary: #000000;
+    --on-primary: #ffffff;
+    --primary-container: #1c1b1b;
+    --on-primary-container: #858383;
+    --inverse-primary: #c8c6c5;
+
+    --secondary: #6a5d43;
+    --on-secondary: #ffffff;
+    --secondary-container: #f0debd;
+    --on-secondary-container: #6e6147;
+
+    --tertiary: #000000;
+    --on-tertiary: #ffffff;
+    --tertiary-container: #1b1c19;
+    --on-tertiary-container: #848480;
+
+    --error: #ba1a1a;
+    --on-error: #ffffff;
+    --error-container: #ffdad6;
+    --on-error-container: #93000a;
+
+    --primary-fixed: #e5e2e1;
+    --primary-fixed-dim: #c8c6c5;
+    --on-primary-fixed: #1c1b1b;
+    --on-primary-fixed-variant: #474746;
+
+    --secondary-fixed: #f3e0c0;
+    --secondary-fixed-dim: #d6c5a5;
+    --on-secondary-fixed: #231a06;
+    --on-secondary-fixed-variant: #51452d;
+
+    --tertiary-fixed: #e4e2dd;
+    --tertiary-fixed-dim: #c8c6c2;
+    --on-tertiary-fixed: #1b1c19;
+    --on-tertiary-fixed-variant: #474744;
+
+    --background: #f9f9f7;
+    --on-background: #1a1c1b;
+    --surface-variant: #e2e3e1;
+
+    /* Semantic mappings & compatibility */
+    --bg: #f9f9f7;
+    --border: #e8e6e1;
+    --text: #1a1c1b;
+    --text-muted: #6b6b66;
+    --accent: #1a1a1a;
+    --accent-soft: #f0eee9;
+    --warm-gold: #b8a88a;
+    --success: #2f7d5b;
+    --danger: #ba1a1a;
     --radius: 10px;
-    --shadow: 0 1px 2px rgba(0, 0, 0, 0.05), 0 4px 16px rgba(0, 0, 0, 0.06);
+    --shadow: 0 1px 2px rgba(26, 28, 27, 0.04);
+    --shadow-ambient: 0 8px 30px rgba(26, 26, 26, 0.04);
 
-    /* Semantic tokens for shadcn & Tailwind integration */
-    --background: var(--bg);
-    --foreground: var(--text);
-
-    --card: var(--surface);
-    --card-foreground: var(--text);
-
-    --popover: var(--surface);
-    --popover-foreground: var(--text);
-
-    --primary: var(--accent);
-    --primary-foreground: #FFFFFF;
-
-    --secondary: var(--accent-soft);
-    --secondary-foreground: var(--text);
-
-    --muted: var(--accent-soft);
-    --muted-foreground: var(--text-muted);
-
-    --accent-foreground: var(--text);
-
-    --destructive: var(--danger);
-    --destructive-foreground: #FFFFFF;
-
-    --input: var(--border);
-    --ring: var(--accent);
+    --card: #ffffff;
+    --card-foreground: #1a1c1b;
+    --popover: #ffffff;
+    --popover-foreground: #1a1c1b;
+    --muted: #f0eee9;
+    --muted-foreground: #6b6b66;
+    --destructive: #ba1a1a;
+    --destructive-foreground: #ffffff;
+    --input: #e8e6e1;
+    --ring: #1a1a1a;
   }
 
   * {
@@ -55,5 +97,89 @@
     font-feature-settings: "rlig" 1, "calt" 1;
     -webkit-font-smoothing: antialiased;
     margin: 0;
+  }
+}
+
+/* Warm Editorial Stationery Typography Classes */
+@layer utilities {
+  .display-hero {
+    font-family: var(--font-playfair), "Playfair Display", serif;
+    font-size: 48px;
+    font-weight: 400;
+    line-height: 56px;
+    letter-spacing: -0.01em;
+  }
+  @media (max-width: 768px) {
+    .display-hero {
+      font-size: 32px;
+      line-height: 40px;
+      letter-spacing: 0;
+    }
+  }
+
+  .headline-lg {
+    font-family: var(--font-playfair), "Playfair Display", serif;
+    font-size: 36px;
+    font-weight: 500;
+    line-height: 44px;
+    letter-spacing: -0.005em;
+  }
+  @media (max-width: 768px) {
+    .headline-lg {
+      font-size: 26px;
+      line-height: 34px;
+      letter-spacing: 0;
+    }
+  }
+
+  .headline-md {
+    font-family: var(--font-playfair), "Playfair Display", serif;
+    font-size: 24px;
+    font-weight: 500;
+    line-height: 32px;
+  }
+
+  .headline-sm {
+    font-family: var(--font-playfair), "Playfair Display", serif;
+    font-size: 20px;
+    font-weight: 600;
+    line-height: 28px;
+  }
+
+  .body-lg {
+    font-family: var(--font-inter), "Inter", sans-serif;
+    font-size: 18px;
+    font-weight: 400;
+    line-height: 30px;
+  }
+
+  .body-base {
+    font-family: var(--font-inter), "Inter", sans-serif;
+    font-size: 16px;
+    font-weight: 400;
+    line-height: 26px;
+  }
+
+  .body-sm {
+    font-family: var(--font-inter), "Inter", sans-serif;
+    font-size: 14px;
+    font-weight: 400;
+    line-height: 22px;
+  }
+
+  .label-md {
+    font-family: var(--font-inter), "Inter", sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    line-height: 18px;
+    letter-spacing: 0.02em;
+  }
+
+  .label-sm {
+    font-family: var(--font-inter), "Inter", sans-serif;
+    font-size: 12px;
+    font-weight: 500;
+    line-height: 16px;
+    letter-spacing: 0.04em;
   }
 }

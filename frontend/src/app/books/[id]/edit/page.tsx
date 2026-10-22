@@ -269,7 +269,7 @@ export default function BookEditorPage() {
       {/* Main Workspace (Left Rail + Canvas + Properties Panel) */}
       <div className="flex flex-1 overflow-hidden relative">
         <LeftRail />
-        <main className="flex-1 h-full overflow-hidden relative bg-[#F4F3EF]">
+        <main className="flex-1 h-full overflow-hidden relative bg-[#f4f4f2]">
           <PageCanvas />
         </main>
         <PropertiesPanel />
