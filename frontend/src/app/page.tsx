@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { BookOpen, Sparkles, SlidersHorizontal, CheckCircle2, ArrowRight } from "lucide-react";
+import { BookOpen, Sparkles, SlidersHorizontal, CheckCircle2, ArrowRight, Palette, Layers, FolderTree } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -22,6 +22,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { themes, layouts } from "@/lib/themes";
 
 export default function StarterPage() {
   const [testInput, setTestInput] = React.useState("Jaipur Trip 2026");
@@ -64,6 +65,18 @@ export default function StarterPage() {
             A calm, minimal design studio where people craft personal travel diaries and memory books,
             typeset with their own handwriting, export print-ready PDFs, and order hardcover keepsakes.
           </p>
+
+          <div className="mt-6 flex flex-wrap items-center gap-4 text-xs text-text-muted">
+            <span className="inline-flex items-center gap-1.5 rounded-md border border-border bg-surface px-2.5 py-1 font-mono">
+              <FolderTree className="h-3.5 w-3.5 text-accent" /> /frontend (Next.js 14)
+            </span>
+            <span className="inline-flex items-center gap-1.5 rounded-md border border-border bg-surface px-2.5 py-1 font-mono">
+              <Layers className="h-3.5 w-3.5 text-accent" /> /backend (Supabase & PDF)
+            </span>
+            <span className="inline-flex items-center gap-1.5 rounded-md border border-border bg-surface px-2.5 py-1 font-mono">
+              <Palette className="h-3.5 w-3.5 text-accent" /> /templates (10 Themes)
+            </span>
+          </div>
         </div>
 
         {/* Interactive Component Showcase */}
@@ -71,10 +84,11 @@ export default function StarterPage() {
           {/* Left: Design Tokens & Layout Specs */}
           <div className="lg:col-span-7">
             <Tabs defaultValue="tokens" className="w-full">
-              <TabsList className="mb-6 grid w-full max-w-md grid-cols-3">
-                <TabsTrigger value="tokens">Design Tokens</TabsTrigger>
-                <TabsTrigger value="sizes">Page Formats</TabsTrigger>
-                <TabsTrigger value="specs">Editor Layout</TabsTrigger>
+              <TabsList className="mb-6 grid w-full max-w-lg grid-cols-4">
+                <TabsTrigger value="tokens">Tokens</TabsTrigger>
+                <TabsTrigger value="themes">10 Themes</TabsTrigger>
+                <TabsTrigger value="sizes">Formats</TabsTrigger>
+                <TabsTrigger value="specs">Layout</TabsTrigger>
               </TabsList>
 
               <TabsContent value="tokens" className="space-y-4">
@@ -124,6 +138,48 @@ export default function StarterPage() {
                 </Card>
               </TabsContent>
 
+              <TabsContent value="themes" className="space-y-4">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="font-serif text-xl">The 10 Curated Themes</CardTitle>
+                    <CardDescription>
+                      Loaded from /templates/themes.json with custom typography pairs and palettes.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 max-h-[360px] overflow-y-auto pr-1">
+                      {themes.map((theme) => (
+                        <div
+                          key={theme.id}
+                          className="flex flex-col justify-between rounded-[8px] border border-border p-3 transition-colors hover:bg-accent-soft/40"
+                          style={{ backgroundColor: theme.palette.bg }}
+                        >
+                          <div>
+                            <div className="flex items-center justify-between">
+                              <span className="font-medium text-xs text-text" style={{ color: theme.palette.primary }}>
+                                {theme.name}
+                              </span>
+                              <span className="text-[10px] text-text-muted">
+                                {theme.fonts.heading}
+                              </span>
+                            </div>
+                            <p className="mt-1 text-[11px] text-text-muted">
+                              Pair: {theme.fonts.heading} + {theme.fonts.body}
+                            </p>
+                          </div>
+                          <div className="mt-3 flex items-center gap-1.5">
+                            <span className="h-3.5 w-3.5 rounded-full border border-black/10" style={{ backgroundColor: theme.palette.bg }} />
+                            <span className="h-3.5 w-3.5 rounded-full border border-black/10" style={{ backgroundColor: theme.palette.primary }} />
+                            <span className="h-3.5 w-3.5 rounded-full border border-black/10" style={{ backgroundColor: theme.palette.accent }} />
+                            <span className="ml-auto text-[10px] text-text-muted">{theme.layouts.length} layouts</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
               <TabsContent value="sizes" className="space-y-4">
                 <Card>
                   <CardHeader>
@@ -154,7 +210,7 @@ export default function StarterPage() {
               <TabsContent value="specs" className="space-y-4">
                 <Card>
                   <CardHeader>
-                    <CardTitle className="font-serif text-xl">Editor Layout Chrome</CardTitle>
+                    <CardTitle className="font-serif text-xl">Editor Layout Chrome & {layouts.length} Layouts</CardTitle>
                     <CardDescription>
                       Standardized geometry for the Canva-like book design workspace.
                     </CardDescription>

@@ -1,0 +1,14 @@
+{
+  "name": "storybound-pdf-service",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Storybound PDF rendering service using Playwright Chromium HTML-to-PDF",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "playwright": "^1.44.0"
+  }
+}
