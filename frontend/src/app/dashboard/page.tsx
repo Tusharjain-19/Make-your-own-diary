@@ -31,11 +31,17 @@ import { useToast } from "@/components/ui/toast";
 
 export default function DashboardPage() {
   const router = useRouter();
-  const { user, logout, getUserBooks, duplicateBook, deleteBook, login } = useAuth();
+  const { user, isLoading, logout, getUserBooks, duplicateBook, deleteBook, login } = useAuth();
   const { showToast } = useToast();
 
   const [books, setBooks] = React.useState<BookSummary[]>([]);
   const [deleteCandidate, setDeleteCandidate] = React.useState<BookSummary | null>(null);
+
+  React.useEffect(() => {
+    if (!isLoading && !user) {
+      router.push("/login");
+    }
+  }, [isLoading, user, router]);
 
   // Load books for currently logged-in user
   const reloadBooks = React.useCallback(() => {

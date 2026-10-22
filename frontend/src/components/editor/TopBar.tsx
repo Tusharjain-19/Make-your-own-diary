@@ -11,6 +11,9 @@ import {
   ZoomIn,
   ZoomOut,
   CheckCircle2,
+  AlertCircle,
+  Loader2,
+  RotateCcw,
   Eye,
   Download,
 } from "lucide-react";
@@ -26,11 +29,13 @@ export function TopBar() {
     undoStack,
     redoStack,
     saveStatus,
+    lastSavedAt,
     undo,
     redo,
     setZoom,
     setActiveTool,
     saveToStorage,
+    retrySave,
   } = useEditorStore();
 
   const [isEditingTitle, setIsEditingTitle] = React.useState(false);
@@ -169,15 +174,45 @@ export function TopBar() {
 
       {/* Right: Save Status, Preview, Export */}
       <div className="flex items-center gap-3">
-        <div className="hidden lg:flex items-center gap-1.5 text-xs text-text-muted">
-          <CheckCircle2
-            className={`h-3 w-3 ${
-              saveStatus === "saved" ? "text-success" : "text-amber-500"
-            }`}
-          />
-          <span className="text-[11px]">
-            {saveStatus === "saved" ? "Saved · just now" : "Unsaved changes"}
-          </span>
+        {/* Save Status Indicator (Day 7 prompt) */}
+        <div className="flex items-center gap-1.5 text-xs text-text-muted bg-surface-container-low px-2 py-1 rounded-[6px] border border-border">
+          {saveStatus === "saving" && (
+            <>
+              <Loader2 className="h-3 w-3 animate-spin text-accent" />
+              <span className="text-[11px] font-mono text-text-muted">Saving…</span>
+            </>
+          )}
+
+          {saveStatus === "saved" && (
+            <>
+              <CheckCircle2 className="h-3 w-3 text-emerald-600" />
+              <span className="text-[11px] font-mono text-text">
+                Saved · {lastSavedAt ? lastSavedAt : "just now"}
+              </span>
+            </>
+          )}
+
+          {saveStatus === "unsaved" && (
+            <>
+              <span className="h-2 w-2 rounded-full bg-amber-500 animate-pulse" />
+              <span className="text-[11px] font-mono text-text-muted">Unsaved</span>
+            </>
+          )}
+
+          {saveStatus === "error" && (
+            <div className="flex items-center gap-1 text-error">
+              <AlertCircle className="h-3 w-3 text-error" />
+              <span className="text-[11px] font-mono font-medium">Save error</span>
+              <button
+                type="button"
+                onClick={() => retrySave()}
+                className="ml-1 flex items-center gap-0.5 text-[10px] font-mono text-accent underline hover:text-text"
+                title="Retry autosave"
+              >
+                <RotateCcw className="h-2.5 w-2.5" /> Retry
+              </button>
+            </div>
+          )}
         </div>
 
         {book && (

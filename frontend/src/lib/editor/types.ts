@@ -31,6 +31,8 @@ export interface ImageEl extends BaseEl {
   type: "image";
   src: string;
   assetId?: string;
+  originalWidth?: number;
+  originalHeight?: number;
   crop?: { x: number; y: number; w: number; h: number };
   frame?: "none" | "polaroid" | "round" | "arch";
   border?: { w: number; color: string };

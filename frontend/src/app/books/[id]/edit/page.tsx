@@ -9,6 +9,7 @@ import { useAuth } from "@/lib/auth/auth-context";
 import { getThemeById } from "@/lib/themes";
 import { useEditorStore, createSamplePageElements } from "@/lib/editor/store";
 import { PageSize, El } from "@/lib/editor/types";
+import { loadBookFromIndexedDB, flushOfflineQueue } from "@/lib/storage/indexeddb";
 import dynamic from "next/dynamic";
 import { TopBar } from "@/components/editor/TopBar";
 import { LeftRail } from "@/components/editor/LeftRail";
@@ -49,53 +50,76 @@ export default function BookEditorPage() {
     sendToBack,
     setActiveTool,
     saveToStorage,
+    saveStatus,
   } = useEditorStore();
 
   const [isInitialized, setIsInitialized] = React.useState(false);
 
-  // Initialize store from Auth / LocalStorage book data
+  // Initialize store from Auth / LocalStorage / IndexedDB book data
   React.useEffect(() => {
     if (!bookId || isInitialized) return;
 
-    const rawBook = getBookById(bookId);
-    if (!rawBook) return;
+    const initializeBook = async () => {
+      let rawBook = getBookById(bookId);
+      let rawPages = getBookPages(bookId);
 
-    const rawPages = getBookPages(bookId);
-    const theme = getThemeById(rawBook.themeId);
-
-    // Format into BookModel
-    const pages = rawPages.map((p, idx) => {
-      let elements: El[] = (p.data?.elements || []) as El[];
-      // For Day 5 proof of concept: if first content page (page 1, index 1) is empty, populate sample elements
-      if (idx === 1 && elements.length === 0) {
-        elements = createSamplePageElements(theme?.fonts.heading || "Playfair Display");
+      // If not in localStorage, attempt loading from IndexedDB
+      if (!rawBook) {
+        const idbBook = await loadBookFromIndexedDB(bookId);
+        if (idbBook) {
+          setBook(idbBook);
+          setIsInitialized(true);
+          return;
+        }
       }
-      return {
-        id: p.id || `p-${rawBook.id}-${p.position || idx + 1}`,
-        position: p.position || idx + 1,
-        bg:
-          p.data?.bg && !p.data.bg.startsWith("var(")
-            ? p.data.bg
-            : theme?.palette.bg || "#FAFAF8",
-        layoutId: p.data?.layoutId || (idx === 0 ? "L01" : "L02"),
-        elements,
-      };
-    });
 
-    setBook({
-      id: rawBook.id,
-      userId: rawBook.userId,
-      title: rawBook.title,
-      subtitle: rawBook.subtitle,
-      author: rawBook.author,
-      dates: rawBook.dates,
-      size: rawBook.size as PageSize,
-      themeId: rawBook.themeId,
-      status: rawBook.status,
-      pages,
-    });
+      if (!rawBook) return;
 
-    setIsInitialized(true);
+      const theme = getThemeById(rawBook.themeId);
+
+      // Format into BookModel
+      const pages = rawPages.map((p, idx) => {
+        let elements: El[] = (p.data?.elements || []) as El[];
+        // For Day 5 proof of concept: if first content page (page 1, index 1) is empty, populate sample elements
+        if (idx === 1 && elements.length === 0) {
+          elements = createSamplePageElements(theme?.fonts.heading || "Playfair Display");
+        }
+        return {
+          id: p.id || `p-${rawBook.id}-${p.position || idx + 1}`,
+          position: p.position || idx + 1,
+          bg:
+            p.data?.bg && !p.data.bg.startsWith("var(")
+              ? p.data.bg
+              : theme?.palette.bg || "#FAFAF8",
+          layoutId: p.data?.layoutId || (idx === 0 ? "L01" : "L02"),
+          elements,
+        };
+      });
+
+      setBook({
+        id: rawBook.id,
+        userId: rawBook.userId,
+        title: rawBook.title,
+        subtitle: rawBook.subtitle,
+        author: rawBook.author,
+        dates: rawBook.dates,
+        size: rawBook.size as PageSize,
+        themeId: rawBook.themeId,
+        status: rawBook.status,
+        pages,
+      });
+
+      setIsInitialized(true);
+    };
+
+    initializeBook();
+
+    // Flush any pending offline queue when online
+    const handleOnline = () => {
+      flushOfflineQueue();
+    };
+    window.addEventListener("online", handleOnline);
+    return () => window.removeEventListener("online", handleOnline);
   }, [bookId, isInitialized, getBookById, getBookPages, setBook]);
 
   // Global Keyboard Shortcuts (from frontend.md and Day 6 prompt)
@@ -236,13 +260,14 @@ export default function BookEditorPage() {
     nudgeSelected,
   ]);
 
-  // Periodic autosave (every 10 seconds if unsaved)
+  // Debounced autosave (2 seconds after changes) as specified in Day 7 prompt
   React.useEffect(() => {
-    const timer = setInterval(() => {
+    if (saveStatus !== "unsaved") return;
+    const timer = setTimeout(() => {
       saveToStorage();
-    }, 10000);
-    return () => clearInterval(timer);
-  }, [saveToStorage]);
+    }, 2000);
+    return () => clearTimeout(timer);
+  }, [saveStatus, saveToStorage]);
 
   const rawBook = getBookById(bookId);
   if (!rawBook && !book) {

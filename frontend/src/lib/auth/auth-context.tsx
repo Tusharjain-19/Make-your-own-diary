@@ -179,6 +179,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         localStorage.removeItem("storybound_current_user");
         setSessionCookie(null);
       }
+    } else {
+      // Prototype mode: auto-login primary demo user for seamless prototype experience
+      const defaultUser = SEED_USERS[0];
+      setUser(defaultUser);
+      setProfile({
+        id: defaultUser.id,
+        name: defaultUser.name,
+        isAdmin: false,
+        createdAt: defaultUser.createdAt,
+      });
+      localStorage.setItem("storybound_current_user", JSON.stringify(defaultUser));
+      setSessionCookie(defaultUser);
     }
     setIsLoading(false);
   }, []);

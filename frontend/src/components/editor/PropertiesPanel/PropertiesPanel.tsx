@@ -15,10 +15,12 @@ import {
   AlignRight,
   Bold,
   Italic,
+  AlertTriangle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useEditorStore } from "@/lib/editor/store";
 import { TextEl, ImageEl, ShapeEl } from "@/lib/editor/types";
+import { calculateDpi, isLowResolution } from "@/lib/editor/images";
 
 const FONT_OPTIONS = [
   "Playfair Display",
@@ -313,6 +315,46 @@ export function PropertiesPanel() {
                 onChange={(e) => updateElement(primarySelected.id, { radius: Number(e.target.value) })}
               />
             </div>
+
+            {/* Print DPI & Low-Resolution Warning (Day 8 Prompt) */}
+            {(() => {
+              const imgEl = primarySelected as ImageEl;
+              const dpi = calculateDpi(imgEl.originalWidth, imgEl.w);
+              const isLow = isLowResolution(imgEl.originalWidth, imgEl.w);
+
+              return (
+                <div className="space-y-2 pt-1 border-t border-border">
+                  <div className="flex items-center justify-between text-[11px]">
+                    <span className="text-text-muted">Print Resolution:</span>
+                    <span
+                      className={`font-mono font-medium ${
+                        isLow ? "text-amber-700 bg-amber-100 px-1.5 py-0.5 rounded" : "text-emerald-700"
+                      }`}
+                    >
+                      {dpi} DPI {isLow ? "(Low)" : "(Optimal)"}
+                    </span>
+                  </div>
+
+                  {isLow && (
+                    <div className="rounded-[6px] border border-amber-300 bg-amber-50/80 p-2 text-xs text-amber-900 space-y-1">
+                      <div className="flex items-center gap-1 font-semibold text-amber-800 text-[11px]">
+                        <AlertTriangle className="h-3 w-3 text-amber-600 shrink-0" />
+                        <span>Low Resolution Warning</span>
+                      </div>
+                      <p className="text-[10px] leading-tight text-amber-700">
+                        At {Math.round(imgEl.w)}mm width, print resolution is under 150 DPI. It may appear grainy or pixelated in the printed book. Scale down or replace with higher resolution photo.
+                      </p>
+                    </div>
+                  )}
+
+                  {imgEl.originalWidth && imgEl.originalHeight && (
+                    <div className="text-[10px] font-mono text-text-muted text-right">
+                      Source: {imgEl.originalWidth} × {imgEl.originalHeight} px
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
           </div>
         )}
 

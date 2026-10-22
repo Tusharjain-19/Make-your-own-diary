@@ -42,6 +42,10 @@ export const ImageNode = React.forwardRef<Konva.Group, ImageNodeProps>(
       img.src = element.src;
       img.onload = () => {
         setImageObj(img);
+        if (!element.originalWidth || !element.originalHeight) {
+          element.originalWidth = img.naturalWidth || img.width;
+          element.originalHeight = img.naturalHeight || img.height;
+        }
       };
     }, [element.src]);
 

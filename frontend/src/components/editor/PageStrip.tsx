@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Plus, Copy, Trash2 } from "lucide-react";
+import { Plus, Copy, Trash2, GripVertical } from "lucide-react";
 import { useEditorStore } from "@/lib/editor/store";
 import { Button } from "@/components/ui/button";
 
@@ -13,10 +13,42 @@ export function PageStrip() {
     addPage,
     duplicatePage,
     deletePage,
+    reorderPages,
   } = useEditorStore();
+
+  const [draggedIdx, setDraggedIdx] = React.useState<number | null>(null);
+  const [dragOverIdx, setDragOverIdx] = React.useState<number | null>(null);
 
   const pages = book?.pages || [];
   const isSquare = book?.size === "Square";
+
+  const handleDragStart = (e: React.DragEvent, index: number) => {
+    setDraggedIdx(index);
+    e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.setData("text/plain", index.toString());
+  };
+
+  const handleDragOver = (e: React.DragEvent, index: number) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+    if (dragOverIdx !== index) {
+      setDragOverIdx(index);
+    }
+  };
+
+  const handleDrop = (e: React.DragEvent, targetIndex: number) => {
+    e.preventDefault();
+    if (draggedIdx !== null && draggedIdx !== targetIndex) {
+      reorderPages(draggedIdx, targetIndex);
+    }
+    setDraggedIdx(null);
+    setDragOverIdx(null);
+  };
+
+  const handleDragEnd = () => {
+    setDraggedIdx(null);
+    setDragOverIdx(null);
+  };
 
   return (
     <footer className="h-[110px] shrink-0 border-t border-border bg-surface px-4 py-2.5 flex items-center gap-3 z-30 select-none">
@@ -32,12 +64,28 @@ export function PageStrip() {
         {pages.map((page, idx) => {
           const isActive = activePageIndex === idx;
           const isCover = idx === 0;
+          const isBeingDragged = draggedIdx === idx;
+          const isDropTarget = dragOverIdx === idx && draggedIdx !== idx;
 
           return (
             <div
               key={page.id}
-              className="relative group shrink-0 flex flex-col items-center gap-1"
+              draggable
+              onDragStart={(e) => handleDragStart(e, idx)}
+              onDragOver={(e) => handleDragOver(e, idx)}
+              onDrop={(e) => handleDrop(e, idx)}
+              onDragEnd={handleDragEnd}
+              className={`relative group shrink-0 flex flex-col items-center gap-1 transition-all ${
+                isBeingDragged ? "opacity-30 scale-95" : ""
+              }`}
             >
+              {/* Insertion Guide indicator */}
+              {isDropTarget && (
+                <div
+                  className={`absolute -left-1.5 top-0 bottom-4 w-1 rounded bg-accent z-20 shadow-sm animate-pulse`}
+                />
+              )}
+
               {/* Thumbnail Container */}
               <button
                 type="button"
@@ -82,14 +130,17 @@ export function PageStrip() {
                 )}
               </button>
 
-              {/* Page Number Label */}
-              <span
-                className={`font-mono text-[9px] ${
-                  isActive ? "font-semibold text-accent" : "text-text-muted"
-                }`}
-              >
-                {isCover ? "Cover" : `p.${idx + 1}`}
-              </span>
+              {/* Page Number Label & drag handle indicator */}
+              <div className="flex items-center gap-0.5">
+                <span
+                  className={`font-mono text-[9px] ${
+                    isActive ? "font-semibold text-accent" : "text-text-muted"
+                  }`}
+                >
+                  {isCover ? "Cover" : `p.${idx + 1}`}
+                </span>
+                <GripVertical className="h-2 w-2 text-text-muted/40 opacity-0 group-hover:opacity-100 transition-opacity cursor-grab" />
+              </div>
 
               {/* Hover Actions Bar */}
               <div className="absolute -top-1 -right-1 hidden group-hover:flex items-center gap-0.5 bg-surface rounded shadow-md border border-border p-0.5 z-10">

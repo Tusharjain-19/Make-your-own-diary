@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { immer } from "zustand/middleware/immer";
 import { BookModel, El, PageData, TextEl, ImageEl } from "./types";
+import { saveBookToIndexedDB, enqueueOfflineSave } from "@/lib/storage/indexeddb";
 
 export type PanelType = "themes" | "layouts" | "uploads" | "text" | "elements" | "handwriting" | null;
 export type ToolType = "select" | "pan";
@@ -17,7 +18,8 @@ interface EditorState {
   clipboard: El[] | null;
   undoStack: PageData[][];
   redoStack: PageData[][];
-  saveStatus: "saved" | "saving" | "unsaved";
+  saveStatus: "saved" | "saving" | "unsaved" | "error";
+  lastSavedAt: string | null;
 
   // Actions
   setBook: (book: BookModel) => void;
@@ -48,15 +50,17 @@ interface EditorState {
   addPage: () => void;
   duplicatePage: (index: number) => void;
   deletePage: (index: number) => void;
-  saveToStorage: () => void;
+  reorderPages: (fromIndex: number, toIndex: number) => void;
+  saveToStorage: () => Promise<void>;
+  retrySave: () => Promise<void>;
 }
 
-// Helper to push history
+// Helper to push history with 100 steps limit (from Day 7 prompt)
 function pushHistory(state: EditorState) {
   if (!state.book) return;
   const snapshot = JSON.parse(JSON.stringify(state.book.pages));
   state.undoStack.push(snapshot);
-  if (state.undoStack.length > 50) state.undoStack.shift();
+  if (state.undoStack.length > 100) state.undoStack.shift();
   state.redoStack = [];
   state.saveStatus = "unsaved";
 }
@@ -75,6 +79,7 @@ export const useEditorStore = create<EditorState>()(
     undoStack: [],
     redoStack: [],
     saveStatus: "saved",
+    lastSavedAt: null,
 
     setBook: (book) =>
       set((state) => {
@@ -84,6 +89,7 @@ export const useEditorStore = create<EditorState>()(
         state.undoStack = [];
         state.redoStack = [];
         state.saveStatus = "saved";
+        state.lastSavedAt = "Just now";
       }),
 
     setActivePage: (index) =>
@@ -415,10 +421,36 @@ export const useEditorStore = create<EditorState>()(
         state.selectedIds = [];
       }),
 
-    saveToStorage: () => {
-      const { book } = get();
+    reorderPages: (fromIndex, toIndex) =>
+      set((state) => {
+        if (!state.book) return;
+        if (fromIndex < 0 || fromIndex >= state.book.pages.length) return;
+        if (toIndex < 0 || toIndex >= state.book.pages.length) return;
+        if (fromIndex === toIndex) return;
+
+        pushHistory(state);
+        const [movedPage] = state.book.pages.splice(fromIndex, 1);
+        state.book.pages.splice(toIndex, 0, movedPage);
+
+        // Re-index all positions (1-based)
+        state.book.pages.forEach((p, idx) => {
+          p.position = idx + 1;
+        });
+
+        // Track the moved page as active
+        state.activePageIndex = toIndex;
+      }),
+
+    saveToStorage: async () => {
+      const { book, activePageIndex } = get();
       if (!book || typeof window === "undefined") return;
+
+      set((state) => {
+        state.saveStatus = "saving";
+      });
+
       try {
+        // 1. Save summary & pages to localStorage
         const storedBooks = JSON.parse(localStorage.getItem("storybound_books") || "[]");
         const index = storedBooks.findIndex((b: { id: string }) => b.id === book.id);
         const summary = {
@@ -454,12 +486,66 @@ export const useEditorStore = create<EditorState>()(
           },
         }));
         localStorage.setItem("storybound_pages", JSON.stringify([...otherPages, ...currentPages]));
+
+        // 2. Persist to IndexedDB offline storage
+        await saveBookToIndexedDB(book);
+
+        // 3. Debounced autosave API call to PUT /api/books/:id/pages/:pageId
+        const activePage = book.pages[activePageIndex];
+        if (activePage) {
+          try {
+            const res = await fetch(`/api/books/${book.id}/pages/${activePage.id}`, {
+              method: "PUT",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                bg: activePage.bg,
+                layoutId: activePage.layoutId,
+                elements: activePage.elements,
+              }),
+            });
+
+            if (!res.ok) {
+              await enqueueOfflineSave({
+                id: `sync-${Date.now()}`,
+                bookId: book.id,
+                pageId: activePage.id,
+                data: activePage,
+                timestamp: Date.now(),
+                retries: 0,
+              });
+            }
+          } catch {
+            await enqueueOfflineSave({
+              id: `sync-${Date.now()}`,
+              bookId: book.id,
+              pageId: activePage.id,
+              data: activePage,
+              timestamp: Date.now(),
+              retries: 0,
+            });
+          }
+        }
+
+        const nowFormatted = new Date().toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit",
+        });
+
         set((state) => {
           state.saveStatus = "saved";
+          state.lastSavedAt = nowFormatted;
         });
       } catch (e) {
         console.error("Autosave failed", e);
+        set((state) => {
+          state.saveStatus = "error";
+        });
       }
+    },
+
+    retrySave: async () => {
+      await get().saveToStorage();
     },
   }))
 );
