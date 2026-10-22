@@ -295,3 +295,31 @@ html {
   -webkit-text-fill-color: transparent;
 }
 
+@keyframes pageFlipNext {
+  0% {
+    transform: rotateY(0deg);
+    filter: brightness(1);
+  }
+  50% {
+    filter: brightness(0.9);
+  }
+  100% {
+    transform: rotateY(-180deg);
+    filter: brightness(0.85);
+  }
+}
+
+@keyframes pageFlipPrev {
+  0% {
+    transform: rotateY(0deg);
+    filter: brightness(1);
+  }
+  50% {
+    filter: brightness(0.9);
+  }
+  100% {
+    transform: rotateY(180deg);
+    filter: brightness(0.85);
+  }
+}
+
