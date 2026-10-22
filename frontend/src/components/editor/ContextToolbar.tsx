@@ -60,6 +60,9 @@ export function ContextToolbar() {
     toggleMargins,
     toggleBleed,
     setPageBackground,
+    selectAll,
+    clearPageContent,
+    removeLayout,
     saveToStorage,
   } = useEditorStore();
 
@@ -275,8 +278,63 @@ export function ContextToolbar() {
           </div>
         </div>
 
-        {/* View Settings & Canvas Toggles */}
-        <div className="flex items-center gap-3">
+        {/* View Settings, Page Actions & Canvas Toggles */}
+        <div className="flex items-center gap-2.5">
+          {/* Select All and Clear Page Actions */}
+          <div className="flex items-center gap-1.5">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                selectAll();
+                showToast("info", "Selected all elements on page");
+              }}
+              className="h-8 text-xs gap-1"
+              title="Select all elements on this page (Ctrl+A / Cmd+A)"
+            >
+              <span>Select All</span>
+              <span className="font-mono text-[10px] text-text-muted bg-accent-soft px-1 rounded">Ctrl+A</span>
+            </Button>
+
+            {activePage?.elements && activePage.elements.length > 0 && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  clearPageContent();
+                  saveToStorage();
+                  showToast("success", "Cleared page. Fresh blank canvas ready!");
+                }}
+                className="h-8 text-xs gap-1 text-danger border-danger/30 hover:bg-danger/10"
+                title="Delete all elements on this page for a fresh blank page"
+              >
+                <SvgTrash size={13} />
+                <span>Clear Page</span>
+              </Button>
+            )}
+
+            {activePage?.layoutId && (
+              <div className="flex items-center gap-1 bg-accent-soft/70 border border-border px-2 py-0.5 rounded-[6px] text-[11px]">
+                <span className="text-text-muted">Layout:</span>
+                <span className="font-mono font-semibold text-accent">{activePage.layoutId}</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    removeLayout();
+                    saveToStorage();
+                    showToast("success", "Layout removed from page");
+                  }}
+                  className="ml-1 text-text-muted hover:text-danger text-xs font-bold leading-none px-0.5"
+                  title="Remove layout template from this page"
+                >
+                  ✕
+                </button>
+              </div>
+            )}
+          </div>
+
+          <div className="h-4 w-px bg-border mx-0.5" />
+
           <div className="flex items-center border border-border rounded-[6px] h-8 bg-surface p-0.5">
             <button
               onClick={toggleMargins}
@@ -915,12 +973,20 @@ export function ContextToolbar() {
         {/* Delete */}
         <Button
           variant="ghost"
-          size="icon"
-          className="h-8 w-8 text-text-muted hover:text-danger"
-          onClick={deleteSelected}
-          title="Delete (Delete / Backspace)"
+          size={selectedIds.length > 1 ? "sm" : "icon"}
+          className={`h-8 ${
+            selectedIds.length > 1 ? "px-2 text-xs gap-1.5" : "w-8"
+          } text-text-muted hover:text-danger hover:bg-danger/10`}
+          onClick={() => {
+            const count = selectedIds.length;
+            deleteSelected();
+            saveToStorage();
+            showToast("info", count > 1 ? `Deleted ${count} elements` : "Deleted element");
+          }}
+          title={`Delete (${selectedIds.length > 1 ? `${selectedIds.length} items` : "Delete / Backspace"})`}
         >
           <SvgTrash size={14} />
+          {selectedIds.length > 1 && <span>Delete ({selectedIds.length})</span>}
         </Button>
       </div>
     </div>

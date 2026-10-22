@@ -43,6 +43,7 @@ export default function BookEditorPage() {
     undo,
     redo,
     nudgeSelected,
+    selectAll,
     deselectAll,
     bringForward,
     sendBackward,
@@ -193,10 +194,18 @@ export default function BookEditorPage() {
         return;
       }
 
+      // Select All: Ctrl/Cmd + A
+      if (cmdOrCtrl && e.key.toLowerCase() === "a") {
+        e.preventDefault();
+        selectAll();
+        return;
+      }
+
       // Delete: Delete or Backspace
       if (e.key === "Delete" || e.key === "Backspace") {
         e.preventDefault();
         deleteSelected();
+        saveToStorage();
         return;
       }
 

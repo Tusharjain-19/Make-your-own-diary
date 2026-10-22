@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Plus, LayoutTemplate as LayoutIcon } from "lucide-react";
+import { Plus, LayoutTemplate as LayoutIcon, Trash2, FileX } from "lucide-react";
 import { useEditorStore } from "@/lib/editor/store";
 import { getPageDimensionsMm } from "@/lib/editor/units";
 import { LAYOUT_TEMPLATES, LayoutTemplate, reflowContentToLayout } from "@/lib/editor/layouts";
@@ -10,12 +10,13 @@ import { useToast } from "@/components/ui/toast";
 import { Button } from "@/components/ui/button";
 
 export function LayoutsPanel() {
-  const { book, activePageIndex, saveToStorage } = useEditorStore();
+  const { book, activePageIndex, saveToStorage, removeLayout } = useEditorStore();
   const [selectedCategory, setSelectedCategory] = React.useState<string>("all");
   const { showToast } = useToast();
 
   const currentTheme = themes.find((t) => t.id === book?.themeId) || themes[0];
   const dim = getPageDimensionsMm(book?.size || "A5");
+  const activePage = book?.pages[activePageIndex];
 
   const categories = [
     { id: "all", label: "All" },
@@ -159,6 +160,56 @@ export function LayoutsPanel() {
 
       {/* Layout List */}
       <div className="space-y-3 max-h-[calc(100vh-270px)] overflow-y-auto pr-1">
+        {/* Blank Canvas / Remove Layout Option */}
+        <div
+          className={`rounded-[8px] border p-3 transition-all ${
+            !activePage?.layoutId && (!activePage?.elements || activePage.elements.length === 0)
+              ? "border-accent bg-accent-soft/40 shadow-xs"
+              : "border-border bg-surface hover:border-accent/40 hover:bg-accent-soft/20"
+          }`}
+        >
+          <div className="flex items-start gap-3">
+            <div
+              className="rounded border border-dashed border-border bg-bg/80 shrink-0 flex items-center justify-center text-text-muted"
+              style={{
+                width: `${Math.round((dim.widthMm * 50) / dim.heightMm)}px`,
+                height: "50px",
+              }}
+            >
+              <FileX className="h-5 w-5 opacity-50" />
+            </div>
+
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-1.5">
+                <span className="font-mono text-[10px] font-semibold text-danger rounded bg-danger/10 px-1.5 py-0.5">
+                  BLANK
+                </span>
+                <span className="font-medium text-xs text-text">
+                  Blank Canvas (Remove Layout)
+                </span>
+              </div>
+              <p className="text-[11px] text-text-muted mt-1 leading-snug">
+                Remove all layout frames and elements to start with a fresh clean page.
+              </p>
+            </div>
+          </div>
+
+          <div className="mt-3 flex items-center gap-2 pt-2 border-t border-border/60">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                removeLayout();
+                saveToStorage();
+                showToast("success", "Layout and elements removed. Fresh page ready!");
+              }}
+              className="flex-1 h-7 text-[11px] text-danger border-danger/30 hover:bg-danger/10 hover:text-danger gap-1"
+            >
+              <Trash2 className="h-3 w-3" /> Remove Layout & Clear Page
+            </Button>
+          </div>
+        </div>
+
         {filteredLayouts.map((template) => {
           const isCurrentLayout = book?.pages[activePageIndex]?.layoutId === template.id;
 

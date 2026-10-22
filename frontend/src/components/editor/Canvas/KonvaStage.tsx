@@ -22,6 +22,7 @@ export default function KonvaStage() {
     activeTool,
     guides,
     selectElement,
+    selectAll,
     deselectAll,
     selectMarquee,
     updateElement,
@@ -172,6 +173,13 @@ export default function KonvaStage() {
         return;
       }
 
+      // Select All: Ctrl/Cmd + A
+      if (cmdOrCtrl && e.key.toLowerCase() === "a") {
+        e.preventDefault();
+        selectAll();
+        return;
+      }
+
       // Delete: Delete or Backspace
       if ((e.key === "Delete" || e.key === "Backspace") && selectedIds.length > 0) {
         e.preventDefault();
@@ -315,16 +323,18 @@ export default function KonvaStage() {
       textAlign: editingEl.align,
       lineHeight: editingEl.lineHeight || 1.3,
       letterSpacing: `${(editingEl.letterSpacing || 0) * zoom}px`,
-      background: "rgba(255, 255, 255, 0.95)",
-      backdropFilter: "blur(2px)",
-      boxShadow: "0 0 0 1.5px #FF2D95, 0 4px 14px rgba(0,0,0,0.12)",
-      borderRadius: "4px",
-      padding: "2px 4px",
+      background: "transparent",
+      backgroundColor: "transparent",
+      boxShadow: "0 0 0 1.5px #FF2D95",
+      borderRadius: "2px",
+      padding: "0px",
+      margin: "0px",
       border: "none",
       outline: "none",
       resize: "none",
       zIndex: 50,
       overflow: "hidden",
+      caretColor: editingEl.color || "#FF2D95",
     };
   }, [editingEl, layerX, layerY, zoom]);
 
@@ -341,10 +351,16 @@ export default function KonvaStage() {
       if (copiedStyle) {
         applyCopiedStyle(id);
       } else {
-        selectElement(id, multi);
+        const el = activePage.elements.find((e) => e.id === id);
+        // If clicking on an already single-selected text element, open inline editing
+        if (el?.type === "text" && selectedIds.length === 1 && selectedIds[0] === id && !multi) {
+          setEditingTextId(id);
+        } else {
+          selectElement(id, multi);
+        }
       }
     },
-    [copiedStyle, applyCopiedStyle, selectElement]
+    [copiedStyle, applyCopiedStyle, selectElement, activePage.elements, selectedIds]
   );
 
   const handleStageMouseDown = (e: Konva.KonvaEventObject<MouseEvent>) => {
@@ -917,6 +933,7 @@ export default function KonvaStage() {
       {editingEl && (
         <textarea
           ref={editingInputRef}
+          className="bg-transparent border-none outline-none focus:outline-none focus:ring-0 resize-none shadow-none"
           style={overlayStyle}
           value={editingEl.text}
           onChange={(e) => {

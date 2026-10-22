@@ -30,6 +30,9 @@ interface EditorState {
   setBook: (book: BookModel) => void;
   setActivePage: (index: number) => void;
   selectElement: (id: string, multi?: boolean) => void;
+  selectAll: () => void;
+  clearPageContent: () => void;
+  removeLayout: () => void;
   deselectAll: () => void;
   selectMarquee: (ids: string[]) => void;
   addElement: (el: El) => void;
@@ -132,6 +135,38 @@ export const useEditorStore = create<EditorState>()(
         }
       }),
 
+    selectAll: () =>
+      set((state) => {
+        if (!state.book) return;
+        const page = state.book.pages[state.activePageIndex];
+        if (!page) return;
+        state.selectedIds = page.elements.map((el) => el.id);
+      }),
+
+    clearPageContent: () =>
+      set((state) => {
+        if (!state.book) return;
+        const page = state.book.pages[state.activePageIndex];
+        if (!page) return;
+        pushHistory(state);
+        page.elements = [];
+        page.layoutId = undefined;
+        state.selectedIds = [];
+        state.saveStatus = "unsaved";
+      }),
+
+    removeLayout: () =>
+      set((state) => {
+        if (!state.book) return;
+        const page = state.book.pages[state.activePageIndex];
+        if (!page) return;
+        pushHistory(state);
+        page.elements = [];
+        page.layoutId = undefined;
+        state.selectedIds = [];
+        state.saveStatus = "unsaved";
+      }),
+
     deselectAll: () =>
       set((state) => {
         state.selectedIds = [];
@@ -188,10 +223,14 @@ export const useEditorStore = create<EditorState>()(
         const page = state.book.pages[state.activePageIndex];
         if (!page) return;
         page.elements = page.elements.filter(
-          (e) => !state.selectedIds.includes(e.id) || e.locked
+          (e) => !state.selectedIds.includes(e.id)
         );
+        if (page.elements.length === 0) {
+          page.layoutId = undefined;
+        }
         state.selectedIds = [];
         state.guides = { vertical: [], horizontal: [] };
+        state.saveStatus = "unsaved";
       }),
 
     duplicateSelected: () =>
