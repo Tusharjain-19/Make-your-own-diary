@@ -9,16 +9,16 @@ import {
   LogOut,
   Shield,
   Trash2,
+  Copy,
   Calendar,
   Layers,
   UserCheck,
+  ArrowRight,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import {
   Dialog,
-  DialogTrigger,
   DialogContent,
   DialogHeader,
   DialogTitle,
@@ -26,15 +26,15 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { useAuth, BookSummary } from "@/lib/auth/auth-context";
+import { getThemeById } from "@/lib/themes";
 
 export default function DashboardPage() {
   const router = useRouter();
-  const { user, logout, getUserBooks, createBook, deleteBook, login } = useAuth();
+  const { user, logout, getUserBooks, duplicateBook, deleteBook, login } = useAuth();
 
   const [books, setBooks] = React.useState<BookSummary[]>([]);
-  const [newBookTitle, setNewBookTitle] = React.useState("");
-  const [newBookSize, setNewBookSize] = React.useState("A5");
-  const [dialogOpen, setDialogOpen] = React.useState(false);
+  const [deleteCandidate, setDeleteCandidate] = React.useState<BookSummary | null>(null);
+  const [actionNotice, setActionNotice] = React.useState<string | null>(null);
 
   // Load books for currently logged-in user
   const reloadBooks = React.useCallback(() => {
@@ -47,18 +47,23 @@ export default function DashboardPage() {
     reloadBooks();
   }, [reloadBooks]);
 
-  const handleCreateBook = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newBookTitle.trim()) return;
-    createBook(newBookTitle.trim(), newBookSize);
-    setNewBookTitle("");
-    setDialogOpen(false);
-    reloadBooks();
+  const handleDuplicate = (bookId: string) => {
+    const copy = duplicateBook(bookId);
+    if (copy) {
+      setActionNotice(`Created duplicate: "${copy.title}"`);
+      setTimeout(() => setActionNotice(null), 3000);
+      reloadBooks();
+    }
   };
 
-  const handleDeleteBook = (bookId: string) => {
-    deleteBook(bookId);
-    reloadBooks();
+  const confirmDelete = () => {
+    if (deleteCandidate) {
+      deleteBook(deleteCandidate.id);
+      setActionNotice(`Deleted "${deleteCandidate.title}"`);
+      setTimeout(() => setActionNotice(null), 3000);
+      setDeleteCandidate(null);
+      reloadBooks();
+    }
   };
 
   const handleSwitchUser = async (demoEmail: string) => {
@@ -75,7 +80,7 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-bg text-text">
+    <div className="min-h-screen bg-bg text-text selection:bg-accent-soft selection:text-text">
       {/* Top Header */}
       <header className="sticky top-0 z-40 border-b border-border bg-surface/80 backdrop-blur-md">
         <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-6">
@@ -107,6 +112,13 @@ export default function DashboardPage() {
 
       {/* Main Container */}
       <main className="mx-auto max-w-6xl px-6 py-10">
+        {/* Action notification toast */}
+        {actionNotice && (
+          <div className="mb-6 rounded-[8px] border border-accent/20 bg-accent text-white px-4 py-2.5 text-xs shadow-md animate-in fade-in duration-200">
+            {actionNotice}
+          </div>
+        )}
+
         {/* RLS Multi-User Security Demonstration Card */}
         <div className="mb-8 rounded-[10px] border border-border bg-surface p-5 shadow-sm">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -120,7 +132,7 @@ export default function DashboardPage() {
                 <span className="font-mono text-xs text-text-muted">[{user.id}]</span>
               </h2>
               <p className="text-xs text-text-muted">
-                Storage query: <code className="rounded bg-accent-soft px-1.5 py-0.5 text-text font-mono text-[11px]">SELECT * FROM books WHERE user_id = auth.uid()</code> — Other users cannot read or modify these records.
+                Storage query: <code className="rounded bg-accent-soft px-1.5 py-0.5 text-text font-mono text-[11px]">WHERE user_id = &apos;{user.id}&apos;</code> — Strict data boundary enforced.
               </p>
             </div>
 
@@ -159,60 +171,12 @@ export default function DashboardPage() {
             </p>
           </div>
 
-          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-            <DialogTrigger asChild>
-              <Button>
-                <Plus className="mr-1.5 h-4 w-4" />
-                Create New Book
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle className="font-serif text-xl">Create a New Book</DialogTitle>
-                <DialogDescription>
-                  Start a new personal book project. You will be able to customize pages and themes in the editor.
-                </DialogDescription>
-              </DialogHeader>
-              <form onSubmit={handleCreateBook} className="space-y-4 py-2">
-                <div className="space-y-1.5">
-                  <label className="text-xs font-medium text-text">Book Title</label>
-                  <Input
-                    placeholder="e.g. Ladakh Odyssey 2026"
-                    value={newBookTitle}
-                    onChange={(e) => setNewBookTitle(e.target.value)}
-                    required
-                  />
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="text-xs font-medium text-text">Book Size</label>
-                  <div className="grid grid-cols-3 gap-2">
-                    {["A5", "A4", "Square"].map((sizeOption) => (
-                      <button
-                        key={sizeOption}
-                        type="button"
-                        onClick={() => setNewBookSize(sizeOption)}
-                        className={`rounded-[8px] border p-2.5 text-center text-xs font-medium transition-colors ${
-                          newBookSize === sizeOption
-                            ? "border-accent bg-accent text-white"
-                            : "border-border bg-surface text-text hover:bg-accent-soft"
-                        }`}
-                      >
-                        {sizeOption}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <DialogFooter className="pt-2">
-                  <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
-                    Cancel
-                  </Button>
-                  <Button type="submit">Create Book</Button>
-                </DialogFooter>
-              </form>
-            </DialogContent>
-          </Dialog>
+          <Link href="/books/new">
+            <Button className="h-10 px-5 text-sm">
+              <Plus className="mr-1.5 h-4 w-4" />
+              New Book
+            </Button>
+          </Link>
         </div>
 
         {/* Books Grid */}
@@ -223,68 +187,121 @@ export default function DashboardPage() {
             </div>
             <h3 className="mt-4 font-serif text-lg font-medium text-text">No books yet</h3>
             <p className="mt-1 text-sm text-text-muted max-w-sm mx-auto">
-              You haven&apos;t started any books under this account. Create your first travel diary or memory album.
+              You haven&apos;t started any books under this account. Launch the creation wizard to design your first book.
             </p>
             <div className="mt-6">
-              <Button onClick={() => setDialogOpen(true)}>
-                <Plus className="mr-1.5 h-4 w-4" />
-                Start your first book
-              </Button>
+              <Link href="/books/new">
+                <Button>
+                  <Plus className="mr-1.5 h-4 w-4" />
+                  Launch Book Wizard
+                </Button>
+              </Link>
             </div>
           </Card>
         ) : (
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {books.map((book) => (
-              <Card key={book.id} className="group overflow-hidden transition-all duration-200 hover:shadow-card">
-                {/* Book Cover Placeholder */}
-                <div className="relative aspect-[3/4] bg-accent-soft/70 p-6 flex flex-col justify-between border-b border-border">
-                  <div className="flex items-center justify-between">
-                    <span className="rounded-full bg-surface px-2.5 py-0.5 text-[10px] font-medium uppercase tracking-wider text-text-muted shadow-sm">
-                      {book.size} · {book.status}
-                    </span>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 text-text-muted hover:text-danger hover:bg-surface/80"
-                      onClick={() => handleDeleteBook(book.id)}
-                      title="Delete book"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+            {books.map((book) => {
+              const theme = getThemeById(book.themeId);
+              return (
+                <Card key={book.id} className="group overflow-hidden border border-border bg-surface transition-all duration-200 hover:shadow-card flex flex-col justify-between">
+                  {/* Book Cover Thumbnail Placeholder */}
+                  <div
+                    className="relative aspect-[3/4] p-6 flex flex-col justify-between border-b border-border transition-colors"
+                    style={{ backgroundColor: theme?.palette.bg || "var(--accent-soft)" }}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="rounded-full bg-surface/90 backdrop-blur-sm px-2.5 py-0.5 text-[10px] font-mono uppercase tracking-wider text-text-muted border border-border/60">
+                        {book.size} · {book.status}
+                      </span>
+
+                      <div className="flex items-center gap-1">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7 text-text-muted hover:text-text hover:bg-surface/80"
+                          onClick={() => handleDuplicate(book.id)}
+                          title="Duplicate book"
+                        >
+                          <Copy className="h-3.5 w-3.5" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7 text-text-muted hover:text-danger hover:bg-surface/80"
+                          onClick={() => setDeleteCandidate(book)}
+                          title="Delete book"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
+                    </div>
+
+                    <div className="space-y-1.5 text-center py-4">
+                      <div className="h-0.5 w-8 mx-auto rounded" style={{ backgroundColor: theme?.palette.accent || "var(--accent)" }} />
+                      <h3
+                        className="font-serif text-xl font-medium tracking-tight line-clamp-2"
+                        style={{ color: theme?.palette.primary || "var(--text)" }}
+                      >
+                        {book.title}
+                      </h3>
+                      {book.subtitle && (
+                        <p className="text-xs italic text-text-muted line-clamp-1">
+                          {book.subtitle}
+                        </p>
+                      )}
+                      <p className="text-[11px] font-mono text-text-muted">
+                        Theme: {theme?.name || book.themeId}
+                      </p>
+                    </div>
+
+                    <div className="flex items-center justify-between text-[11px] text-text-muted border-t border-border/60 pt-3">
+                      <span className="flex items-center gap-1">
+                        <Layers className="h-3 w-3" /> {book.pageCount} pages
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <Calendar className="h-3 w-3" /> {book.updatedAt}
+                      </span>
+                    </div>
                   </div>
 
-                  <div className="space-y-1">
-                    <div className="h-1 w-8 rounded-full bg-accent" />
-                    <h3 className="font-serif text-xl font-medium tracking-tight text-accent line-clamp-2">
-                      {book.title}
-                    </h3>
-                    <p className="text-xs text-text-muted font-sans">
-                      Theme: {book.themeId}
-                    </p>
-                  </div>
-
-                  <div className="flex items-center justify-between text-[11px] text-text-muted border-t border-border/60 pt-3">
-                    <span className="flex items-center gap-1">
-                      <Layers className="h-3 w-3" /> {book.pageCount} pages
+                  {/* Actions Strip */}
+                  <div className="p-4 bg-surface flex items-center justify-between border-t border-border/60">
+                    <span className="text-xs text-text-muted">
+                      {book.bookType || "Book"}
                     </span>
-                    <span className="flex items-center gap-1">
-                      <Calendar className="h-3 w-3" /> {book.updatedAt}
-                    </span>
+                    <Link href={`/books/${book.id}/edit`}>
+                      <Button size="sm" className="h-8 text-xs gap-1.5">
+                        <span>Open Editor</span>
+                        <ArrowRight className="h-3.5 w-3.5" />
+                      </Button>
+                    </Link>
                   </div>
-                </div>
-
-                <div className="p-4 bg-surface flex items-center justify-between">
-                  <span className="text-xs text-text-muted">Ready to edit</span>
-                  <Link href={`/books/${book.id}/edit`}>
-                    <Button size="sm" variant="outline" className="h-8 text-xs">
-                      Open Editor
-                    </Button>
-                  </Link>
-                </div>
-              </Card>
-            ))}
+                </Card>
+              );
+            })}
           </div>
         )}
+
+        {/* Delete Confirmation Dialog */}
+        <Dialog open={!!deleteCandidate} onOpenChange={(open) => !open && setDeleteCandidate(null)}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle className="font-serif text-xl">Delete Book?</DialogTitle>
+              <DialogDescription>
+                Are you sure you want to permanently delete &ldquo;{deleteCandidate?.title}&rdquo; and all of its 20 pages?
+                This action cannot be undone.
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter className="mt-4 gap-2">
+              <Button variant="outline" onClick={() => setDeleteCandidate(null)}>
+                Cancel
+              </Button>
+              <Button variant="destructive" onClick={confirmDelete}>
+                Delete Book Permanently
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </main>
     </div>
   );

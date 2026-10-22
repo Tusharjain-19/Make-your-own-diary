@@ -22,11 +22,43 @@ export interface BookSummary {
   id: string;
   userId: string;
   title: string;
+  subtitle?: string;
+  author?: string;
+  dates?: string;
+  bookType?: string;
   size: string;
   themeId: string;
   status: "draft" | "exported" | "ordered";
   pageCount: number;
   updatedAt: string;
+  coverFront?: {
+    title: string;
+    subtitle?: string;
+    author?: string;
+    dates?: string;
+    themeId: string;
+  };
+}
+
+export interface CreateBookParams {
+  title: string;
+  subtitle?: string;
+  author?: string;
+  dates?: string;
+  bookType?: string;
+  size?: string;
+  themeId?: string;
+}
+
+export interface BookPage {
+  id: string;
+  bookId: string;
+  position: number;
+  data: {
+    bg: string;
+    layoutId?: string;
+    elements: unknown[];
+  };
 }
 
 interface AuthContextType {
@@ -38,7 +70,10 @@ interface AuthContextType {
   signup: (name: string, email: string, password?: string) => Promise<{ success: boolean; error?: string }>;
   logout: () => void;
   getUserBooks: () => BookSummary[];
-  createBook: (title: string, size?: string, themeId?: string) => BookSummary;
+  getBookById: (bookId: string) => BookSummary | undefined;
+  getBookPages: (bookId: string) => BookPage[];
+  createBook: (params: CreateBookParams | string, size?: string, themeId?: string) => BookSummary;
+  duplicateBook: (bookId: string) => BookSummary | undefined;
   deleteBook: (bookId: string) => void;
 }
 
@@ -64,6 +99,10 @@ const SEED_BOOKS: BookSummary[] = [
     id: "book-jaipur-101",
     userId: "user-tushar-01",
     title: "Jaipur Diary 2026",
+    subtitle: "A royal journey through the Pink City",
+    author: "Tushar Gupta",
+    dates: "Jan 12 - Jan 18, 2026",
+    bookType: "Travel Diary",
     size: "A5",
     themeId: "royal-india",
     status: "draft",
@@ -74,6 +113,10 @@ const SEED_BOOKS: BookSummary[] = [
     id: "book-goa-202",
     userId: "user-sarah-02",
     title: "Goa Beach Memories",
+    subtitle: "Sunsets and coastal trails",
+    author: "Sarah Jenkins",
+    dates: "Dec 2025",
+    bookType: "Memory Book",
     size: "Square",
     themeId: "polaroid-scrapbook",
     status: "draft",
@@ -84,6 +127,7 @@ const SEED_BOOKS: BookSummary[] = [
 
 const USERS_KEY = "storybound_users";
 const BOOKS_KEY = "storybound_books";
+const PAGES_KEY = "storybound_pages";
 const SESSION_COOKIE = "storybound_session";
 
 function setSessionCookie(user: User | null) {
@@ -148,7 +192,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     let existingUser = storedUsers.find((u) => u.email.toLowerCase() === email.toLowerCase().trim());
 
     if (!existingUser) {
-      // Auto-register on login if not found to provide smooth prototype experience
       const name = email.split("@")[0].replace(/[._]/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
       existingUser = {
         id: `user-${Date.now()}`,
@@ -225,7 +268,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     storedUsers.push(newUser);
     localStorage.setItem(USERS_KEY, JSON.stringify(storedUsers));
 
-    // Auto-create profile trigger simulation
     setUser(newUser);
     setProfile({
       id: newUser.id,
@@ -247,38 +289,140 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     router.push("/login");
   };
 
-  // Row Level Security (RLS) Simulation: Filter strictly by current user's id
+  // Row Level Security (RLS) Filter: Filter strictly by current user's id
   const getUserBooks = (): BookSummary[] => {
     if (!user) return [];
     const allBooks: BookSummary[] = JSON.parse(localStorage.getItem(BOOKS_KEY) || "[]");
-    // RLS: user_id = auth.uid()
     return allBooks.filter((book) => book.userId === user.id);
   };
 
-  const createBook = (title: string, size = "A5", themeId = "minimal-memories"): BookSummary => {
-    if (!user) throw new Error("Must be logged in to create a book");
+  const getBookById = (bookId: string): BookSummary | undefined => {
+    if (!user) return undefined;
     const allBooks: BookSummary[] = JSON.parse(localStorage.getItem(BOOKS_KEY) || "[]");
+    return allBooks.find((book) => book.id === bookId && book.userId === user.id);
+  };
+
+  const getBookPages = (bookId: string): BookPage[] => {
+    if (!user) return [];
+    const allPages: BookPage[] = JSON.parse(localStorage.getItem(PAGES_KEY) || "[]");
+    return allPages.filter((page) => page.bookId === bookId);
+  };
+
+  const createBook = (
+    params: CreateBookParams | string,
+    sizeParam = "A5",
+    themeIdParam = "minimal-memories"
+  ): BookSummary => {
+    if (!user) throw new Error("Must be logged in to create a book");
+
+    let title = "Untitled Book";
+    let subtitle = "";
+    let author = user.name;
+    let dates = "";
+    let bookType = "Travel Diary";
+    let size = sizeParam;
+    let themeId = themeIdParam;
+
+    if (typeof params === "string") {
+      title = params.trim() || title;
+    } else {
+      title = params.title?.trim() || title;
+      subtitle = params.subtitle?.trim() || "";
+      author = params.author?.trim() || user.name;
+      dates = params.dates?.trim() || "";
+      bookType = params.bookType || bookType;
+      size = params.size || size;
+      themeId = params.themeId || themeId;
+    }
+
+    const newBookId = `book-${Date.now()}`;
+    const allBooks: BookSummary[] = JSON.parse(localStorage.getItem(BOOKS_KEY) || "[]");
+
     const newBook: BookSummary = {
-      id: `book-${Date.now()}`,
+      id: newBookId,
       userId: user.id,
-      title: title.trim() || "Untitled Book",
+      title,
+      subtitle,
+      author,
+      dates,
+      bookType,
       size,
       themeId,
       status: "draft",
       pageCount: 20,
       updatedAt: "Just now",
+      coverFront: {
+        title,
+        subtitle,
+        author,
+        dates,
+        themeId,
+      },
     };
+
     allBooks.unshift(newBook);
     localStorage.setItem(BOOKS_KEY, JSON.stringify(allBooks));
+
+    // Create 20 blank pages for the book
+    const allPages: BookPage[] = JSON.parse(localStorage.getItem(PAGES_KEY) || "[]");
+    const newPages: BookPage[] = Array.from({ length: 20 }, (_, i) => ({
+      id: `page-${newBookId}-${i + 1}`,
+      bookId: newBookId,
+      position: i + 1,
+      data: {
+        bg: "var(--bg)",
+        layoutId: i === 0 ? "L07" : i === 1 ? "L01" : i === 2 ? "L02" : "L03",
+        elements: [],
+      },
+    }));
+
+    localStorage.setItem(PAGES_KEY, JSON.stringify([...allPages, ...newPages]));
+
     return newBook;
+  };
+
+  const duplicateBook = (bookId: string): BookSummary | undefined => {
+    if (!user) return undefined;
+    const allBooks: BookSummary[] = JSON.parse(localStorage.getItem(BOOKS_KEY) || "[]");
+    const original = allBooks.find((b) => b.id === bookId && b.userId === user.id);
+    if (!original) return undefined;
+
+    const newBookId = `book-${Date.now()}`;
+    const duplicate: BookSummary = {
+      ...original,
+      id: newBookId,
+      title: `${original.title} (Copy)`,
+      updatedAt: "Just now",
+    };
+
+    allBooks.unshift(duplicate);
+    localStorage.setItem(BOOKS_KEY, JSON.stringify(allBooks));
+
+    // Duplicate pages
+    const allPages: BookPage[] = JSON.parse(localStorage.getItem(PAGES_KEY) || "[]");
+    const originalPages = allPages.filter((p) => p.bookId === bookId);
+    const duplicatedPages: BookPage[] = originalPages.map((p, i) => ({
+      id: `page-${newBookId}-${i + 1}`,
+      bookId: newBookId,
+      position: p.position,
+      data: { ...p.data },
+    }));
+
+    localStorage.setItem(PAGES_KEY, JSON.stringify([...allPages, ...duplicatedPages]));
+
+    return duplicate;
   };
 
   const deleteBook = (bookId: string) => {
     if (!user) return;
     const allBooks: BookSummary[] = JSON.parse(localStorage.getItem(BOOKS_KEY) || "[]");
-    // RLS check: verify user owns this book before deleting
-    const filtered = allBooks.filter((book) => !(book.id === bookId && book.userId === user.id));
-    localStorage.setItem(BOOKS_KEY, JSON.stringify(filtered));
+    const filteredBooks = allBooks.filter((book) => !(book.id === bookId && book.userId === user.id));
+    localStorage.setItem(BOOKS_KEY, JSON.stringify(filteredBooks));
+
+    // Remove pages associated with book
+    const allPages: BookPage[] = JSON.parse(localStorage.getItem(PAGES_KEY) || "[]");
+    const filteredPages = allPages.filter((page) => page.bookId !== bookId);
+    localStorage.setItem(PAGES_KEY, JSON.stringify(filteredPages));
   };
 
   return (
@@ -292,7 +436,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         signup,
         logout,
         getUserBooks,
+        getBookById,
+        getBookPages,
         createBook,
+        duplicateBook,
         deleteBook,
       }}
     >
