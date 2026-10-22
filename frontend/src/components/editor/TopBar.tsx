@@ -260,9 +260,25 @@ export function TopBar() {
           </Link>
         )}
 
-        <Button size="sm" className="h-8 text-xs gap-1.5 bg-accent text-white hover:bg-neutral-800 rounded-[8px] shadow-sm font-medium">
-          <Download className="h-3.5 w-3.5" /> Download PDF · ₹50
-        </Button>
+        {book && (
+          <Button
+            size="sm"
+            onClick={() => {
+              if (typeof window !== "undefined") {
+                const ent = localStorage.getItem("storybound_pdf_entitlements");
+                const hasPaid = ent && JSON.parse(ent)[book.id];
+                if (hasPaid) {
+                  window.open(`/api/books/${book.id}/export`, "_blank");
+                } else {
+                  window.location.href = `/books/${book.id}/checkout`;
+                }
+              }
+            }}
+            className="h-8 text-xs gap-1.5 bg-accent text-white hover:bg-neutral-800 rounded-[8px] shadow-sm font-medium"
+          >
+            <Download className="h-3.5 w-3.5" /> Download PDF · ₹50
+          </Button>
+        )}
       </div>
     </header>
   );

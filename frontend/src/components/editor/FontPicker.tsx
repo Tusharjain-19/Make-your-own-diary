@@ -31,7 +31,22 @@ export function FontPicker({ currentFont, onSelectFont, className = "" }: FontPi
     };
   }, [isOpen]);
 
+  const [customFonts, setCustomFonts] = React.useState<{ name: string; glyphCount: number }[]>([]);
+
+  React.useEffect(() => {
+    try {
+      const saved = localStorage.getItem("storybound_user_handwriting_fonts");
+      if (saved) {
+        setCustomFonts(JSON.parse(saved));
+      }
+    } catch {}
+  }, [isOpen]);
+
   const categories = ["All", "Handwriting", "Serif Display", "Serif Body", "Sans", "Display", "Typewriter"];
+
+  const filteredCustomFonts = React.useMemo(() => {
+    return customFonts.filter((f) => f.name.toLowerCase().includes(search.toLowerCase()));
+  }, [customFonts, search]);
 
   const filteredFonts = React.useMemo(() => {
     return FONTS.filter((f) => {
@@ -98,7 +113,50 @@ export function FontPicker({ currentFont, onSelectFont, className = "" }: FontPi
 
           {/* Font List with Previews */}
           <div className="max-h-60 overflow-y-auto space-y-0.5 pr-1">
-            {filteredFonts.length === 0 ? (
+            {/* Custom Handwriting Fonts Section */}
+            {filteredCustomFonts.length > 0 && (
+              <div className="mb-2 pb-2 border-b border-border">
+                <div className="px-2 py-1 text-[10px] font-semibold text-accent uppercase tracking-wider flex items-center gap-1">
+                  <PenTool className="h-3 w-3" /> My Handwriting Fonts
+                </div>
+                {filteredCustomFonts.map((cf) => {
+                  const isSelected = cf.name === currentFont;
+                  return (
+                    <button
+                      key={cf.name}
+                      type="button"
+                      onClick={() => {
+                        onSelectFont(cf.name);
+                        setIsOpen(false);
+                      }}
+                      className={`flex w-full items-center justify-between rounded-[6px] px-2.5 py-1.5 text-left transition-colors ${
+                        isSelected
+                          ? "bg-accent-soft text-accent font-semibold"
+                          : "hover:bg-accent-soft/50 text-text"
+                      }`}
+                    >
+                      <div className="flex flex-col min-w-0">
+                        <div className="flex items-center gap-1.5">
+                          <PenTool className="h-3.5 w-3.5 text-accent shrink-0" />
+                          <span
+                            className="truncate text-base"
+                            style={{ fontFamily: `"${cf.name}", cursive, sans-serif` }}
+                          >
+                            {cf.name}
+                          </span>
+                        </div>
+                        <span className="text-[10px] text-text-muted">
+                          Personal Handwriting · {cf.glyphCount} glyphs
+                        </span>
+                      </div>
+                      {isSelected && <Check className="h-3.5 w-3.5 text-accent shrink-0 ml-2" />}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+
+            {filteredFonts.length === 0 && filteredCustomFonts.length === 0 ? (
               <div className="py-4 text-center text-xs text-text-muted">No fonts found</div>
             ) : (
               filteredFonts.map((font) => {

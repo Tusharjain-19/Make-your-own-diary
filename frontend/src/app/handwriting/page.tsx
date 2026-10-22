@@ -2,15 +2,12 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { PenTool, ArrowLeft } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { StoryboundLogo } from "@/components/ui/logo";
-import { useAuth } from "@/lib/auth/auth-context";
+import { HandwritingPanel } from "@/components/editor/panels/HandwritingPanel";
 
 export default function HandwritingPage() {
-  const { user } = useAuth();
-
   return (
     <div className="min-h-screen bg-bg text-text overflow-x-hidden">
       <header className="sticky top-0 z-40 border-b border-border bg-surface/80 backdrop-blur-md">
@@ -28,37 +25,10 @@ export default function HandwritingPage() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-4xl px-4 sm:px-6 py-8 sm:py-12">
-        <div className="mb-8">
-          <div className="mb-2 inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-text-muted">
-            <PenTool className="h-3.5 w-3.5 text-accent" />
-            Signature Feature (Day 15 to 17)
-          </div>
-          <h1 className="font-serif text-3xl font-medium tracking-tight text-text">
-            My Handwriting Fonts
-          </h1>
-          <p className="mt-2 text-sm text-text-muted">
-            Turn your real-world handwriting into an in-app font for your books. Private to{" "}
-            <strong>{user?.name}</strong>.
-          </p>
+      <main className="mx-auto max-w-2xl px-4 sm:px-6 py-8 sm:py-12">
+        <div className="rounded-2xl border border-border bg-surface p-6 sm:p-8 shadow-sm">
+          <HandwritingPanel />
         </div>
-
-        <Card className="border border-border bg-surface p-8 text-center shadow-sm">
-          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-accent-soft text-accent">
-            <PenTool className="h-6 w-6" />
-          </div>
-          <CardHeader>
-            <CardTitle className="font-serif text-xl">Handwriting Pipeline Ready</CardTitle>
-            <CardDescription>
-              A4 template sheet generation, OpenCV perspective-warp, vectorization, and opentype font builder will activate in Week 3.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button variant="secondary" size="sm" disabled>
-              Glyph Template Sheet (Coming Soon)
-            </Button>
-          </CardContent>
-        </Card>
       </main>
     </div>
   );
