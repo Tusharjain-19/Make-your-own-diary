@@ -1,14 +1,14 @@
 "use client";
 
 import * as React from "react";
-import { Heading1, Heading2, AlignLeft, Quote } from "lucide-react";
+import { Heading1, Heading2, AlignLeft, Quote, Tag } from "lucide-react";
 import { useEditorStore } from "@/lib/editor/store";
 import { TextEl } from "@/lib/editor/types";
 
 export function TextPanel() {
   const { addElement } = useEditorStore();
 
-  const handleAddText = (preset: "heading" | "subheading" | "body" | "quote") => {
+  const handleAddText = (preset: "heading" | "subheading" | "body" | "caption" | "quote") => {
     let newText: TextEl;
     const baseId = `text-${Date.now()}`;
 
@@ -49,6 +49,26 @@ export function TextPanel() {
           y: 55,
           w: 108,
           h: 12,
+          rot: 0,
+          z: 1,
+        };
+        break;
+      case "caption":
+        newText = {
+          id: baseId,
+          type: "text",
+          text: "JAIPUR · OCTOBER 2026",
+          font: "Inter",
+          size: 8.5,
+          weight: 500,
+          color: "#6B6B66",
+          align: "center",
+          lineHeight: 1.4,
+          letterSpacing: 0.8,
+          x: 25,
+          y: 95,
+          w: 98,
+          h: 8,
           rot: 0,
           z: 1,
         };
@@ -105,7 +125,7 @@ export function TextPanel() {
       <div>
         <h3 className="font-serif text-base font-medium text-text">Text Presets</h3>
         <p className="text-xs text-text-muted mt-0.5">
-          Click a text preset to add it to the active canvas page.
+          Click any preset to drop it onto your active canvas page.
         </p>
       </div>
 
@@ -118,7 +138,7 @@ export function TextPanel() {
             <Heading1 className="h-4 w-4" />
           </div>
           <div>
-            <div className="font-serif text-lg font-medium text-text">Add a heading</div>
+            <div className="font-serif text-lg font-medium text-text">Heading</div>
             <div className="text-[11px] text-text-muted">Playfair Display · 26pt</div>
           </div>
         </button>
@@ -131,7 +151,7 @@ export function TextPanel() {
             <Heading2 className="h-4 w-4" />
           </div>
           <div>
-            <div className="font-serif text-base font-medium text-text">Add a subheading</div>
+            <div className="font-serif text-base font-medium text-text">Subheading</div>
             <div className="text-[11px] text-text-muted">Playfair Display · 18pt</div>
           </div>
         </button>
@@ -144,8 +164,21 @@ export function TextPanel() {
             <AlignLeft className="h-4 w-4" />
           </div>
           <div>
-            <div className="font-sans text-sm font-normal text-text">Add body text</div>
+            <div className="font-sans text-sm font-normal text-text">Body Text</div>
             <div className="text-[11px] text-text-muted">Inter · 10.5pt</div>
+          </div>
+        </button>
+
+        <button
+          onClick={() => handleAddText("caption")}
+          className="flex w-full items-center gap-3 rounded-[8px] border border-border bg-surface p-3 text-left transition-all hover:bg-accent-soft/40 hover:shadow-sm"
+        >
+          <div className="flex h-8 w-8 items-center justify-center rounded bg-accent-soft text-accent">
+            <Tag className="h-4 w-4" />
+          </div>
+          <div>
+            <div className="font-mono text-xs uppercase tracking-wider text-text">Caption / Date</div>
+            <div className="text-[11px] text-text-muted">Inter Medium · 8.5pt</div>
           </div>
         </button>
 
@@ -157,7 +190,7 @@ export function TextPanel() {
             <Quote className="h-4 w-4" />
           </div>
           <div>
-            <div className="font-serif text-sm italic text-text">Add a quote</div>
+            <div className="font-serif text-sm italic text-text">Quote Block</div>
             <div className="text-[11px] text-text-muted">Lora Italic · 14pt</div>
           </div>
         </button>

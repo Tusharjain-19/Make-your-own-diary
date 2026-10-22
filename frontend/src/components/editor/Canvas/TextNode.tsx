@@ -9,7 +9,9 @@ import { mmToPx, pxToMm } from "@/lib/editor/units";
 interface TextNodeProps {
   element: TextEl;
   activeTool: "select" | "pan";
+  isEditing?: boolean;
   onSelect: (multi: boolean) => void;
+  onDoubleClick?: () => void;
   onDragMove: (xPx: number, yPx: number, wPx: number, hPx: number) => void;
   onDragEnd: (xMm: number, yMm: number) => void;
   onTransformEnd: (xMm: number, yMm: number, wMm: number, hMm: number, rot: number) => void;
@@ -20,7 +22,9 @@ export const TextNode = React.forwardRef<Konva.Text, TextNodeProps>(
     {
       element,
       activeTool,
+      isEditing = false,
       onSelect,
+      onDoubleClick,
       onDragMove,
       onDragEnd,
       onTransformEnd,
@@ -65,15 +69,16 @@ export const TextNode = React.forwardRef<Konva.Text, TextNodeProps>(
         height={hPx}
         text={element.text}
         fontSize={fontSizePx}
-        fontFamily={element.font}
+        fontFamily={element.font || "Playfair Display"}
         fontStyle={fontStyle}
+        textDecoration={element.underline ? "underline" : ""}
         fill={element.color || "#1A1A1A"}
         align={element.align}
         lineHeight={element.lineHeight || 1.3}
         letterSpacing={element.letterSpacing || 0}
         rotation={element.rot || 0}
-        opacity={element.opacity ?? 1}
-        draggable={!element.locked && activeTool === "select"}
+        opacity={isEditing ? 0 : element.opacity ?? 1}
+        draggable={!element.locked && activeTool === "select" && !isEditing}
         onMouseDown={(e) => {
           e.cancelBubble = true;
           onSelect(e.evt.shiftKey);
@@ -82,9 +87,17 @@ export const TextNode = React.forwardRef<Konva.Text, TextNodeProps>(
           e.cancelBubble = true;
           onSelect(e.evt.shiftKey);
         }}
+        onDblClick={(e) => {
+          e.cancelBubble = true;
+          onDoubleClick?.();
+        }}
         onTap={(e) => {
           e.cancelBubble = true;
           onSelect(false);
+        }}
+        onDblTap={(e) => {
+          e.cancelBubble = true;
+          onDoubleClick?.();
         }}
         onDragMove={(e) => {
           onDragMove(e.target.x(), e.target.y(), wPx, hPx);

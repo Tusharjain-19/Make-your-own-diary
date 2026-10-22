@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Rect, Circle, Group } from "react-konva";
+import { Rect, Circle, Line, Arrow, Group } from "react-konva";
 import Konva from "konva";
 import { ShapeEl } from "@/lib/editor/types";
 import { mmToPx, pxToMm } from "@/lib/editor/units";
@@ -43,6 +43,8 @@ export const ShapeNode = React.forwardRef<Konva.Group, ShapeNodeProps>(
         (ref as any).current = node;
       }
     };
+
+    const strokeWidthPx = element.strokeW ? mmToPx(element.strokeW) : 1;
 
     return (
       <Group
@@ -95,26 +97,173 @@ export const ShapeNode = React.forwardRef<Konva.Group, ShapeNodeProps>(
           );
         }}
       >
-        {element.shape === "circle" ? (
+        {/* CIRCLE */}
+        {element.shape === "circle" && (
           <Circle
             x={wPx / 2}
             y={hPx / 2}
             radius={Math.min(wPx, hPx) / 2}
-            fill={element.fill || "#E8E6E1"}
-            stroke={element.stroke}
-            strokeWidth={element.strokeW ? mmToPx(element.strokeW) : 0}
+            fill={element.fill || "#F0EEE9"}
+            stroke={element.stroke || "#1A1A1A"}
+            strokeWidth={element.stroke ? strokeWidthPx : 0}
           />
-        ) : (
+        )}
+
+        {/* RECTANGLE */}
+        {element.shape === "rect" && (
           <Rect
             x={0}
             y={0}
             width={wPx}
             height={hPx}
-            fill={element.fill || "#E8E6E1"}
-            stroke={element.stroke}
-            strokeWidth={element.strokeW ? mmToPx(element.strokeW) : 0}
-            cornerRadius={4}
+            fill={element.fill || "#F0EEE9"}
+            stroke={element.stroke || "#E8E6E1"}
+            strokeWidth={element.stroke ? strokeWidthPx : 0}
+            cornerRadius={element.cornerRadius || 2}
           />
+        )}
+
+        {/* HORIZONTAL LINE */}
+        {element.shape === "line" && (
+          <Line
+            points={[0, hPx / 2, wPx, hPx / 2]}
+            stroke={element.stroke || element.fill || "#1A1A1A"}
+            strokeWidth={Math.max(1, hPx)}
+            lineCap="round"
+          />
+        )}
+
+        {/* ARROW */}
+        {element.shape === "arrow" && (
+          <Arrow
+            points={[0, hPx / 2, wPx, hPx / 2]}
+            stroke={element.stroke || element.fill || "#1A1A1A"}
+            fill={element.stroke || element.fill || "#1A1A1A"}
+            strokeWidth={Math.max(1.5, strokeWidthPx)}
+            pointerLength={10}
+            pointerWidth={8}
+            lineCap="round"
+          />
+        )}
+
+        {/* POLAROID FRAME */}
+        {element.shape === "frame-polaroid" && (
+          <Group>
+            {/* Outer white card */}
+            <Rect
+              x={0}
+              y={0}
+              width={wPx}
+              height={hPx}
+              fill="#FFFFFF"
+              stroke="#E8E6E1"
+              strokeWidth={1}
+              cornerRadius={2}
+              shadowColor="rgba(0,0,0,0.06)"
+              shadowBlur={6}
+              shadowOffset={{ x: 0, y: 2 }}
+            />
+            {/* Inner photo cutout */}
+            <Rect
+              x={wPx * 0.08}
+              y={hPx * 0.08}
+              width={wPx * 0.84}
+              height={hPx * 0.7}
+              fill={element.fill || "#F4F1EA"}
+              stroke="#D4D0C8"
+              strokeWidth={0.5}
+            />
+          </Group>
+        )}
+
+        {/* ARCHED FRAME */}
+        {element.shape === "frame-arch" && (
+          <Rect
+            x={0}
+            y={0}
+            width={wPx}
+            height={hPx}
+            fill={element.fill || "#F8F1E4"}
+            stroke={element.stroke || "#7A1F2B"}
+            strokeWidth={strokeWidthPx}
+            cornerRadius={[wPx / 2, wPx / 2, 0, 0]}
+          />
+        )}
+
+        {/* THIN RULE DIVIDER */}
+        {element.shape === "divider-rule" && (
+          <Group>
+            <Line
+              points={[0, hPx / 2, wPx * 0.45, hPx / 2]}
+              stroke={element.stroke || "#B8A88A"}
+              strokeWidth={1}
+            />
+            {/* Center diamond glyph */}
+            <Rect
+              x={wPx / 2}
+              y={hPx / 2}
+              width={6}
+              height={6}
+              offsetX={3}
+              offsetY={3}
+              rotation={45}
+              fill={element.stroke || "#B8A88A"}
+            />
+            <Line
+              points={[wPx * 0.55, hPx / 2, wPx, hPx / 2]}
+              stroke={element.stroke || "#B8A88A"}
+              strokeWidth={1}
+            />
+          </Group>
+        )}
+
+        {/* DOTTED DIVIDER */}
+        {element.shape === "divider-dotted" && (
+          <Line
+            points={[0, hPx / 2, wPx, hPx / 2]}
+            stroke={element.stroke || "#6B6B66"}
+            strokeWidth={1.5}
+            dash={[4, 6]}
+            lineCap="round"
+          />
+        )}
+
+        {/* WASHI TAPE STRIP */}
+        {element.shape === "tape" && (
+          <Rect
+            x={0}
+            y={0}
+            width={wPx}
+            height={hPx}
+            fill={element.fill || "#F0DEBD"}
+            stroke="#D6C5A5"
+            strokeWidth={0.5}
+            opacity={0.88}
+          />
+        )}
+
+        {/* POSTAGE STAMP */}
+        {element.shape === "stamp" && (
+          <Group>
+            <Rect
+              x={0}
+              y={0}
+              width={wPx}
+              height={hPx}
+              fill={element.fill || "#FFF9F0"}
+              stroke={element.stroke || "#B8A88A"}
+              strokeWidth={1.5}
+              dash={[3, 3]}
+            />
+            <Rect
+              x={wPx * 0.12}
+              y={hPx * 0.12}
+              width={wPx * 0.76}
+              height={hPx * 0.76}
+              stroke={element.stroke || "#B8A88A"}
+              strokeWidth={0.5}
+            />
+          </Group>
         )}
       </Group>
     );

@@ -1,14 +1,16 @@
 "use client";
 
 import * as React from "react";
-import { Stage, Layer, Rect, Line, Transformer } from "react-konva";
+import { Stage, Layer, Rect, Line, Transformer, Image as KonvaImage } from "react-konva";
 import Konva from "konva";
 import { useEditorStore } from "@/lib/editor/store";
 import { mmToPx, pxToMm, getPageDimensionsMm, resolveCanvasColor } from "@/lib/editor/units";
 import { calculateSnap } from "@/lib/editor/snap";
+import { TextEl } from "@/lib/editor/types";
 import { TextNode } from "./TextNode";
 import { ImageNode } from "./ImageNode";
 import { ShapeNode } from "./ShapeNode";
+import { IconNode } from "./IconNode";
 
 export default function KonvaStage() {
   const {
@@ -25,6 +27,7 @@ export default function KonvaStage() {
     updateElement,
     setGuides,
     setPan,
+    saveToStorage,
   } = useEditorStore();
 
   const containerRef = React.useRef<HTMLDivElement | null>(null);
@@ -32,6 +35,10 @@ export default function KonvaStage() {
   const transformerRef = React.useRef<Konva.Transformer | null>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const nodeRefs = React.useRef<Map<string, any>>(new Map());
+
+  // Inline text editing state
+  const [editingTextId, setEditingTextId] = React.useState<string | null>(null);
+  const editingInputRef = React.useRef<HTMLTextAreaElement | null>(null);
 
   // Dynamic container dimensions
   const [stageSize, setStageSize] = React.useState({ width: 900, height: 700 });
@@ -55,6 +62,15 @@ export default function KonvaStage() {
     return () => observer.disconnect();
   }, []);
 
+  // Focus textarea when editing starts
+  React.useEffect(() => {
+    if (editingTextId && editingInputRef.current) {
+      editingInputRef.current.focus();
+      const len = editingInputRef.current.value.length;
+      editingInputRef.current.setSelectionRange(len, len);
+    }
+  }, [editingTextId]);
+
   // Marquee selection state
   const [marquee, setMarquee] = React.useState<{
     x1: number;
@@ -75,6 +91,19 @@ export default function KonvaStage() {
     bg: "#FAFAF8",
     elements: [],
   };
+
+  // Optional Page Background Image
+  const [bgImageObj, setBgImageObj] = React.useState<HTMLImageElement | null>(null);
+  React.useEffect(() => {
+    if (!activePage.bgImage) {
+      setBgImageObj(null);
+      return;
+    }
+    const img = new window.Image();
+    img.crossOrigin = "anonymous";
+    img.src = activePage.bgImage;
+    img.onload = () => setBgImageObj(img);
+  }, [activePage.bgImage]);
 
   const dim = getPageDimensionsMm(book?.size || "A5");
   const pageWidthPx = mmToPx(dim.widthMm);
@@ -132,6 +161,54 @@ export default function KonvaStage() {
   const sortedElements = React.useMemo(() => {
     return [...activePage.elements].sort((a, b) => (a.z || 0) - (b.z || 0));
   }, [activePage.elements]);
+
+  const editingEl = editingTextId
+    ? (activePage.elements.find((e) => e.id === editingTextId) as TextEl | undefined)
+    : undefined;
+
+  const overlayStyle: React.CSSProperties = React.useMemo(() => {
+    if (!editingEl) return { display: "none" };
+    const elXPx = mmToPx(editingEl.x);
+    const elYPx = mmToPx(editingEl.y);
+    const elWPx = mmToPx(editingEl.w);
+    const elHPx = mmToPx(editingEl.h);
+
+    const left = layerX + elXPx * zoom;
+    const top = layerY + elYPx * zoom;
+    const width = Math.max(80, elWPx * zoom);
+    const height = Math.max(36, elHPx * zoom);
+
+    const fontSizePx = mmToPx(editingEl.size * 0.352778) * zoom;
+
+    return {
+      position: "absolute",
+      left: `${left}px`,
+      top: `${top}px`,
+      width: `${width}px`,
+      minHeight: `${height}px`,
+      transform: `rotate(${editingEl.rot || 0}deg)`,
+      transformOrigin: "top left",
+      fontFamily: editingEl.font || "Playfair Display",
+      fontSize: `${fontSizePx}px`,
+      fontWeight: editingEl.weight,
+      fontStyle: editingEl.italic ? "italic" : "normal",
+      textDecoration: editingEl.underline ? "underline" : "none",
+      color: editingEl.color || "#1A1A1A",
+      textAlign: editingEl.align,
+      lineHeight: editingEl.lineHeight || 1.3,
+      letterSpacing: `${(editingEl.letterSpacing || 0) * zoom}px`,
+      background: "rgba(255, 255, 255, 0.95)",
+      backdropFilter: "blur(2px)",
+      boxShadow: "0 0 0 1.5px #FF2D95, 0 4px 14px rgba(0,0,0,0.12)",
+      borderRadius: "4px",
+      padding: "2px 4px",
+      border: "none",
+      outline: "none",
+      resize: "none",
+      zIndex: 50,
+      overflow: "hidden",
+    };
+  }, [editingEl, layerX, layerY, zoom]);
 
   const handleStageMouseDown = (e: Konva.KonvaEventObject<MouseEvent>) => {
     // If Space is pressed or Pan tool is active, handle canvas pan
@@ -322,6 +399,18 @@ export default function KonvaStage() {
             cornerRadius={2}
           />
 
+          {/* Optional Page Background Image */}
+          {bgImageObj && (
+            <KonvaImage
+              image={bgImageObj}
+              x={0}
+              y={0}
+              width={pageWidthPx}
+              height={pageHeightPx}
+              listening={false}
+            />
+          )}
+
           {/* Safe Margins Guide (subtle dashed line) */}
           <Rect
             x={marginPx}
@@ -347,7 +436,9 @@ export default function KonvaStage() {
                   }}
                   element={el}
                   activeTool={activeTool}
+                  isEditing={editingTextId === el.id}
                   onSelect={(multi) => selectElement(el.id, multi)}
+                  onDoubleClick={() => setEditingTextId(el.id)}
                   onDragMove={(x, y, w, h) => handleElementDragMove(el.id, x, y, w, h)}
                   onDragEnd={(x, y) => handleElementDragEnd(el.id, x, y)}
                   onTransformEnd={(x, y, w, h, rot) =>
@@ -380,6 +471,26 @@ export default function KonvaStage() {
             if (el.type === "shape") {
               return (
                 <ShapeNode
+                  key={el.id}
+                  ref={(node) => {
+                    if (node) nodeRefs.current.set(el.id, node);
+                    else nodeRefs.current.delete(el.id);
+                  }}
+                  element={el}
+                  activeTool={activeTool}
+                  onSelect={(multi) => selectElement(el.id, multi)}
+                  onDragMove={(x, y, w, h) => handleElementDragMove(el.id, x, y, w, h)}
+                  onDragEnd={(x, y) => handleElementDragEnd(el.id, x, y)}
+                  onTransformEnd={(x, y, w, h, rot) =>
+                    handleElementTransformEnd(el.id, x, y, w, h, rot)
+                  }
+                />
+              );
+            }
+
+            if (el.type === "icon") {
+              return (
+                <IconNode
                   key={el.id}
                   ref={(node) => {
                     if (node) nodeRefs.current.set(el.id, node);
@@ -464,6 +575,28 @@ export default function KonvaStage() {
           )}
         </Layer>
       </Stage>
+
+      {/* Double-click Inline Text Editing Overlay */}
+      {editingEl && (
+        <textarea
+          ref={editingInputRef}
+          style={overlayStyle}
+          value={editingEl.text}
+          onChange={(e) => {
+            updateElement(editingEl.id, { text: e.target.value });
+          }}
+          onBlur={() => {
+            setEditingTextId(null);
+            saveToStorage();
+          }}
+          onKeyDown={(e) => {
+            if (e.key === "Escape") {
+              setEditingTextId(null);
+              saveToStorage();
+            }
+          }}
+        />
+      )}
     </div>
   );
 }

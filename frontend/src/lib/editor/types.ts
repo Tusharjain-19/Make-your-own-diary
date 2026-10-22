@@ -12,6 +12,7 @@ export interface BaseEl {
   z: number; // stacking index
   locked?: boolean;
   opacity?: number; // 0 to 1
+  themeToken?: "primary" | "accent" | "muted" | "text" | "surface";
 }
 
 export interface TextEl extends BaseEl {
@@ -21,6 +22,7 @@ export interface TextEl extends BaseEl {
   size: number; // in pt (1 pt = 0.352778 mm)
   weight: number;
   italic?: boolean;
+  underline?: boolean;
   color: string;
   align: "left" | "center" | "right" | "justify";
   lineHeight: number;
@@ -42,10 +44,21 @@ export interface ImageEl extends BaseEl {
 
 export interface ShapeEl extends BaseEl {
   type: "shape";
-  shape: "rect" | "circle" | "line" | "arrow";
+  shape:
+    | "rect"
+    | "circle"
+    | "line"
+    | "arrow"
+    | "frame-polaroid"
+    | "frame-arch"
+    | "divider-rule"
+    | "divider-dotted"
+    | "tape"
+    | "stamp";
   fill?: string;
   stroke?: string;
   strokeW?: number;
+  cornerRadius?: number;
 }
 
 export interface IconEl extends BaseEl {
@@ -60,6 +73,7 @@ export interface PageData {
   id: string;
   position: number;
   bg: string;
+  bgImage?: string;
   layoutId?: string;
   elements: El[];
 }
