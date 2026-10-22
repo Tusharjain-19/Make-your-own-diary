@@ -1098,73 +1098,7 @@ export default function MarketingLandingPage() {
           </div>
         </section>
 
-        {/* ========================================================================= */}
-        {/* 9. REAL IMPRESSIONS & TESTIMONIALS                                       */}
-        {/* ========================================================================= */}
-        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 border-t border-surface-variant">
-          <div className="text-center max-w-xl mx-auto mb-14 space-y-2">
-            <ScrollReveal delay={50}>
-              <span className="text-xs font-mono uppercase tracking-widest text-secondary font-semibold">
-                Real Impressions
-              </span>
-            </ScrollReveal>
-            <ScrollReveal delay={150}>
-              <h2 className="headline-lg text-primary">
-                Crafted by travellers across India
-              </h2>
-            </ScrollReveal>
-          </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {[
-              {
-                quote:
-                  "“Making our Pushkar & Jaipur diary took one evening. For ₹50, the print-ready PDF looks like a coffee table book! Took it to my local printer on 150gsm paper and everyone is stunned.”",
-                name: "Ananya S.",
-                role: "Solo backpacker in Rajasthan",
-                img:
-                  "https://lh3.googleusercontent.com/aida-public/AB6AXuDwnAE0IB9Ixt_DKTBfwyEX0PT8ptEDv9rCNZQsvb0dwCo50VVNxBHCEhhyVgSFgABV37FkOLiIE9LYPDGx5HzjbyRCK05Kkbhv0WpydidaSOXoVoxz0xH0ojr2pS2NhVa98nPd4WCLExql-HBQVnLIpUaMoQpnYTrtD7kGs5ekKrFRKK9bUkOaiyqkpMQ2nVv3vkNVt49mEocjephLU3sYho028NEU2ewrTqMeVA8yf7fB9lv8i8GK",
-              },
-              {
-                quote:
-                  "“Seeing our vows and travel notes in my actual handwriting made Meera tear up. It captures the spirit of our Kerala backwaters trip better than an ordinary album ever could.”",
-                name: "Rohan & Meera",
-                role: "Honeymoon journal, Kerala",
-                img:
-                  "https://lh3.googleusercontent.com/aida-public/AB6AXuBgst2KagXB6xmeS3eIsbleJg46fcFk1_6RfabJwTuuor3oqrffz2JEgAWllu1q9c8Pb5PE6rRiyWS5OyR-9wewysS4IEeVBH9Tk5rOI7vpLxgV5aNyQjH4uRAlz0Zbw_8kNKxspBdAQUSv5vsNFDkPZmpohVFskrbF4TVpw5187PNslbCgVckIJJdgdFPvYPDcotPadS1w0KRDYtPdZ64FtNZncFGF4T8EbbQ6IokhTrmQlhbw0DCI",
-              },
-              {
-                quote:
-                  "“Far better than ordinary photobooks. The typography and layouts feel like Kinfolk magazine. The grid constraints are genuinely smart and maintain perfect book margins.”",
-                name: "Kabir M.",
-                role: "Architecture student, Delhi",
-                img:
-                  "https://lh3.googleusercontent.com/aida-public/AB6AXuDfeIISSw74L4zzvkCQ-xz0WUK6KohE7x2anRej8QaTUGBMwDKEH3U8IJUjfdlEqrXjYRYzBNamvw9KaVdg279glsHZMeOkW5GcVrFQguwsd9jDqNSdDF0ix2lkrdKytxkaG9sj8F3LZQkvAaIunT2G67C26LjauDk2QrfU3PMYp7LxlYrT_d_NrCapCSDBrb6NRkcfaO1R_LfuyhD_xrsznzoXcchtfbJnx9um5aykAtuAVz9DGzF-",
-              },
-            ].map((rev, i) => (
-              <ScrollReveal key={rev.name} delay={i * 120} direction="up">
-                <div className="bg-surface-container-lowest p-6 rounded-[12px] border border-surface-variant flex flex-col justify-between h-full shadow-xs">
-                  <div className="space-y-4">
-                    <SvgStarRating count={5} size={15} className="text-[#B8A88A]" />
-                    <p className="font-serif italic text-sm text-on-surface leading-relaxed">
-                      {rev.quote}
-                    </p>
-                  </div>
-
-                  <div className="flex items-center gap-3 pt-6 mt-6 border-t border-surface-variant">
-                    <div className="w-10 h-10 rounded-full overflow-hidden border border-surface-variant bg-surface-container">
-                      <img src={rev.img} alt={rev.name} className="w-full h-full object-cover" />
-                    </div>
-                    <div>
-                      <div className="font-serif text-sm font-semibold text-primary">{rev.name}</div>
-                      <div className="text-xs text-on-surface-variant">{rev.role}</div>
-                    </div>
-                  </div>
-                </div>
-              </ScrollReveal>
-            ))}
-          </div>
-        </section>
 
         {/* ========================================================================= */}
         {/* 10. FAQ ACCORDION                                                        */}

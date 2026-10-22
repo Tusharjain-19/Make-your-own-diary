@@ -4,16 +4,21 @@ import * as React from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEditorStore } from "@/lib/editor/store";
+import { useAuth } from "@/lib/auth/auth-context";
+import { loadBookFromIndexedDB } from "@/lib/storage/indexeddb";
+import { PageSize, El, PageData } from "@/lib/editor/types";
 import { BookPageRenderer } from "@/components/preview/BookPageRenderer";
 import { pageTurnAudio } from "@/lib/audio/page-turn-sound";
-import { SvgClose, SvgSparkle, SvgFlourish, SvgArrowRight } from "@/components/ui/website-icons";
-import { Volume2, VolumeX, Sparkles, BookOpen } from "lucide-react";
+import { SvgClose, SvgArrowRight } from "@/components/ui/website-icons";
+import { Volume2, VolumeX, BookOpen, ArrowLeft } from "lucide-react";
 
 export default function BookPreviewPage() {
   const params = useParams();
   const router = useRouter();
   const bookId = (params?.id as string) || "book-jaipur-101";
-  const { book } = useEditorStore();
+
+  const { getBookById, getBookPages } = useAuth();
+  const { book, setBook } = useEditorStore();
 
   const [currentSpreadIndex, setCurrentSpreadIndex] = React.useState(1); // Spread 1 = pages 2-3
   const [viewMode, setViewMode] = React.useState<"spread" | "cover">("spread");
@@ -22,19 +27,65 @@ export default function BookPreviewPage() {
   const [bannerDismissed, setBannerDismissed] = React.useState(false);
   const [soundEnabled, setSoundEnabled] = React.useState(true);
 
-  // 3D Turning Leaf Animation State
+  // 3D Leaf Turn Animation State
   const [isFlipping, setIsFlipping] = React.useState(false);
   const [flipDirection, setFlipDirection] = React.useState<"next" | "prev" | null>(null);
 
+  // Initialize book from localStorage / store / IndexedDB if not loaded
+  React.useEffect(() => {
+    if (!book || book.id !== bookId) {
+      const rawBook = getBookById(bookId);
+      const rawPages = getBookPages(bookId);
+
+      if (rawBook && rawPages && rawPages.length > 0) {
+        const fullPages: PageData[] = rawPages.map((rp, idx) => ({
+          id: rp.id,
+          position: rp.position || idx + 1,
+          bg: rp.data?.bg || "#FAF8F5",
+          layoutId: rp.data?.layoutId,
+          elements: (rp.data?.elements || []) as El[],
+        }));
+
+        setBook({
+          id: rawBook.id,
+          title: rawBook.title,
+          subtitle: rawBook.subtitle,
+          author: rawBook.author,
+          dates: rawBook.dates,
+          size: (rawBook.size as PageSize) || "A5",
+          themeId: rawBook.themeId || "warm-editorial",
+          status: (rawBook.status as "draft" | "exported" | "ordered") || "draft",
+          pages: fullPages,
+        });
+      } else {
+        loadBookFromIndexedDB(bookId).then((idbBook) => {
+          if (idbBook) setBook(idbBook);
+        });
+      }
+    }
+  }, [bookId, book, getBookById, getBookPages, setBook]);
+
+  // Auto-on audio: enable audio and unlock Web Audio context on user's first gesture
+  React.useEffect(() => {
+    pageTurnAudio.enabled = soundEnabled;
+    const unlockAudio = () => {
+      pageTurnAudio.play();
+      window.removeEventListener("pointerdown", unlockAudio);
+      window.removeEventListener("keydown", unlockAudio);
+    };
+    window.addEventListener("pointerdown", unlockAudio, { once: true });
+    window.addEventListener("keydown", unlockAudio, { once: true });
+    return () => {
+      window.removeEventListener("pointerdown", unlockAudio);
+      window.removeEventListener("keydown", unlockAudio);
+    };
+  }, [soundEnabled]);
+
   const title = book?.title || "Jaipur: A City of Royal Memories";
+  const author = book?.author || "Tushar";
   const pages = book?.pages || [];
   const totalPages = Math.max(20, pages.length);
   const totalSpreads = Math.ceil((totalPages - 1) / 2); // Exclude cover
-
-  // Keep audio sync with soundEnabled state
-  React.useEffect(() => {
-    pageTurnAudio.enabled = soundEnabled;
-  }, [soundEnabled]);
 
   // Keyboard navigation
   React.useEffect(() => {
@@ -109,96 +160,82 @@ export default function BookPreviewPage() {
     }
   };
 
-  // Active spread page numbers
+  // Active spread page numbers & user data (1-indexed)
   const leftPageNum = currentSpreadIndex * 2;
   const rightPageNum = currentSpreadIndex * 2 + 1;
   const leftPageData = pages[leftPageNum - 1] || null;
   const rightPageData = pages[rightPageNum - 1] || null;
 
-  // Next spread pages for preview during flip
-  const nextLeftPageNum = (currentSpreadIndex + 1) * 2;
-  const nextRightPageNum = (currentSpreadIndex + 1) * 2 + 1;
-  const nextLeftPageData = pages[nextLeftPageNum - 1] || null;
-  const nextRightPageData = pages[nextRightPageNum - 1] || null;
-
-  // Prev spread pages for preview during flip
-  const prevLeftPageNum = (currentSpreadIndex - 1) * 2;
-  const prevRightPageNum = (currentSpreadIndex - 1) * 2 + 1;
-  const prevLeftPageData = pages[prevLeftPageNum - 1] || null;
-  const prevRightPageData = pages[prevRightPageNum - 1] || null;
-
   return (
-    <div className="flex h-screen w-screen flex-col overflow-hidden bg-[#121110] text-[#ded8cb] antialiased select-none font-sans">
-      {/* Top Notification Banner */}
+    <div className="flex h-screen w-screen flex-col overflow-hidden bg-[#f9f9f7] text-[#1a1c1b] antialiased select-none font-sans">
+      {/* Top Notification Banner (Warm Editorial Stationery) */}
       {!bannerDismissed && (
-        <aside className="w-full bg-[#1e1c19] border-b border-[#312e2a] text-[#d6c5a5] px-4 py-1.5 flex items-center justify-between text-xs z-50 shrink-0">
+        <aside className="w-full bg-[#eeeeec] border-b border-[#e2e3e1] text-[#444748] px-4 py-1.5 flex items-center justify-between text-xs z-50 shrink-0">
           <div className="flex items-center gap-2 mx-auto">
-            <span className="flex h-1.5 w-1.5 rounded-full bg-amber-400 animate-pulse" />
-            <span className="font-mono text-[11px] tracking-wide">
-              Physical Hardcover Preview Mode · Interactive 3D Page Turn with Spatial Sound
+            <span className="flex h-2 w-2 rounded-full bg-[#6a5d43] animate-pulse" />
+            <span className="font-mono text-[11px] tracking-wide text-[#1a1c1b]">
+              Interactive Hardcover Spread · Real Canvas Content · Spatial Sound Enabled
             </span>
           </div>
           <button
             onClick={() => setBannerDismissed(true)}
             aria-label="Dismiss banner"
-            className="text-[#a8a39a] hover:text-white transition-colors p-1 rounded"
+            className="text-[#747878] hover:text-[#1a1c1b] transition-colors p-1 rounded"
           >
             <SvgClose size={12} />
           </button>
         </aside>
       )}
 
-      {/* Top Header */}
-      <header className="bg-[#1a1917] border-b border-[#2e2a25] flex justify-between items-center w-full px-4 sm:px-6 h-14 z-40 shrink-0 shadow-sm">
+      {/* Top Header (Warm Editorial Stationery Light Mode) */}
+      <header className="bg-white/95 border-b border-[#e2e3e1] flex justify-between items-center w-full px-4 sm:px-6 h-14 z-40 shrink-0 shadow-xs backdrop-blur-md">
         <div className="flex items-center space-x-3 sm:space-x-4">
           <Link
             href={`/books/${bookId}/edit`}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[#3b362f] hover:bg-[#252320] text-[#dcd6ca] text-xs font-medium transition-colors"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[#e2e3e1] bg-white hover:bg-[#f4f4f2] text-[#1a1c1b] text-xs font-medium transition-colors shadow-2xs"
           >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-            </svg>
+            <ArrowLeft className="w-3.5 h-3.5" />
             <span className="hidden sm:inline">Back to Editor</span>
           </Link>
 
-          <div className="h-4 w-px bg-[#3b362f] hidden sm:block" />
+          <div className="h-4 w-px bg-[#e2e3e1] hidden sm:block" />
 
           <div className="flex items-center gap-2">
-            <BookOpen className="h-4 w-4 text-[#d4af37]" />
-            <span className="font-serif text-base sm:text-lg font-semibold tracking-tight text-[#f2ede4] line-clamp-1">
+            <BookOpen className="h-4 w-4 text-[#6a5d43]" />
+            <span className="font-serif text-base sm:text-lg font-semibold tracking-tight text-[#1a1c1b] line-clamp-1">
               {title}
             </span>
-            <span className="hidden md:inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-mono bg-[#2a2621] text-[#c4b9a5] border border-[#3e3831]">
+            <span className="hidden md:inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-mono bg-[#f4f4f2] text-[#747878] border border-[#e2e3e1]">
               Hardcover Spec · 300 DPI
             </span>
           </div>
         </div>
 
         {/* Center: Controls for Watermark & Sound */}
-        <div className="hidden lg:flex items-center gap-4 text-xs text-[#a39a8c]">
-          <label className="flex items-center gap-1.5 cursor-pointer hover:text-white transition-colors">
+        <div className="hidden lg:flex items-center gap-4 text-xs text-[#444748]">
+          <label className="flex items-center gap-1.5 cursor-pointer hover:text-[#1a1c1b] transition-colors">
             <input
               type="checkbox"
               checked={showWatermark}
               onChange={(e) => setShowWatermark(e.target.checked)}
-              className="rounded border-[#3e3831] text-[#9e3d48] focus:ring-0 w-3.5 h-3.5 bg-[#252320]"
+              className="rounded border-[#c4c7c7] text-[#000000] focus:ring-0 w-3.5 h-3.5"
             />
             <span className="font-mono text-[11px]">Draft Watermark</span>
           </label>
 
           <button
             onClick={() => setSoundEnabled(!soundEnabled)}
-            className="flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-[#3e3831] bg-[#252320] text-[#c4b9a5] hover:text-white transition-colors text-[11px] font-mono"
+            className="flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-[#e2e3e1] bg-[#f4f4f2] text-[#1a1c1b] hover:bg-[#eeeeec] transition-colors text-[11px] font-mono shadow-2xs"
             title={soundEnabled ? "Mute page turn sound" : "Enable page turn sound"}
           >
             {soundEnabled ? (
               <>
-                <Volume2 className="h-3.5 w-3.5 text-emerald-400" />
+                <Volume2 className="h-3.5 w-3.5 text-emerald-700" />
                 <span>Page Sound: On</span>
               </>
             ) : (
               <>
-                <VolumeX className="h-3.5 w-3.5 text-neutral-400" />
+                <VolumeX className="h-3.5 w-3.5 text-[#747878]" />
                 <span>Page Sound: Off</span>
               </>
             )}
@@ -209,7 +246,7 @@ export default function BookPreviewPage() {
         <div className="flex items-center space-x-2 sm:space-x-3">
           <button
             onClick={() => router.push(`/books/${bookId}/checkout`)}
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-[#9e3d48] hover:bg-[#852f39] text-white text-xs font-semibold shadow-md transition-all active:scale-95"
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-[#000000] hover:bg-[#2f3130] text-white text-xs font-semibold shadow-xs transition-all active:scale-95"
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
@@ -219,10 +256,13 @@ export default function BookPreviewPage() {
         </div>
       </header>
 
-      {/* Main 3D Book Stage */}
+      {/* Main 3D Book Stage (Warm Light Studio Aesthetic) */}
       <main
-        className="flex-1 flex flex-col justify-center items-center p-3 sm:p-6 md:p-8 lg:p-10 relative overflow-hidden bg-radial from-[#1e1c19] via-[#141311] to-[#0a0a09]"
-        style={{ perspective: "2400px" }}
+        className="flex-1 flex flex-col justify-center items-center p-3 sm:p-6 md:p-8 lg:p-10 relative overflow-hidden"
+        style={{
+          perspective: "2400px",
+          background: "radial-gradient(circle at 50% 35%, #ffffff 0%, #f9f9f7 60%, #eeeeec 100%)",
+        }}
       >
         {/* Physical Book Wrapper with 3D Depth */}
         <div
@@ -235,7 +275,7 @@ export default function BookPreviewPage() {
           {/* ================= CLOSED HARDCOVER COVER VIEW ================= */}
           {viewMode === "cover" && (
             <div
-              className={`relative w-80 sm:w-96 aspect-[3/4] bg-[#3a1317] rounded-r-2xl rounded-l-sm shadow-[0_35px_80px_-15px_rgba(0,0,0,0.9),0_15px_30px_rgba(0,0,0,0.8)] border border-[#5a1c22] p-8 flex flex-col justify-between cursor-pointer transition-all duration-700 hover:scale-[1.02] ${
+              className={`relative w-80 sm:w-96 aspect-[3/4] bg-[#3a1317] rounded-r-2xl rounded-l-sm shadow-[0_30px_70px_-15px_rgba(26,28,27,0.35),0_12px_24px_rgba(26,28,27,0.2)] border border-[#5a1c22] p-8 flex flex-col justify-between cursor-pointer transition-all duration-700 hover:scale-[1.02] ${
                 isFlipping ? "rotate-y-[-70deg] opacity-75" : "rotate-y-0 opacity-100"
               }`}
               onClick={handleNext}
@@ -249,7 +289,6 @@ export default function BookPreviewPage() {
                 backgroundPosition: "0 0, 3px 3px",
               }}
             >
-              {/* Embossed Leather Spine & Gold Foil Accents */}
               <div className="absolute inset-4 border border-[#d4af37]/50 rounded-r-lg pointer-events-none" />
               <div className="absolute inset-5 border border-[#d4af37]/20 rounded-r-lg pointer-events-none" />
 
@@ -257,21 +296,21 @@ export default function BookPreviewPage() {
               <div className="absolute -top-3.5 left-12 w-4 h-9 bg-[#8c1c24] rounded-t-sm shadow-md border-x border-[#590e14] z-20" />
               <div className="absolute -bottom-5 left-14 w-3.5 h-10 bg-[#8c1c24] rounded-b-sm shadow-md border-x border-[#590e14] z-20 transform rotate-3" />
 
-              {/* Spine edge hinge crease */}
+              {/* Spine edge crease */}
               <div className="absolute top-0 left-5 bottom-0 w-1 bg-gradient-to-r from-black/40 via-transparent to-white/10" />
 
               <div className="relative z-10 flex justify-between items-center text-[#d4af37] text-xs font-mono">
                 <span>VOL. I</span>
-                <span>EST. 2026</span>
+                <span>BY {author.toUpperCase()}</span>
               </div>
 
               <div className="relative z-10 text-center space-y-3 my-auto">
                 <div className="h-0.5 w-12 bg-[#d4af37]/70 mx-auto" />
-                <h2 className="font-serif text-3xl sm:text-4xl text-[#fce8ba] font-normal tracking-wide gold-foil drop-shadow-sm">
+                <h2 className="font-serif text-3xl sm:text-4xl text-[#fce8ba] font-normal tracking-wide gold-foil drop-shadow-xs">
                   {title}
                 </h2>
                 <p className="font-serif italic text-sm text-[#e8cda2]/90 tracking-wider">
-                  A Handcrafted Travel Chronicle
+                  Personal Travel Chronicle
                 </p>
                 <div className="h-0.5 w-12 bg-[#d4af37]/70 mx-auto" />
               </div>
@@ -290,9 +329,9 @@ export default function BookPreviewPage() {
                 transformStyle: "preserve-3d",
               }}
             >
-              {/* Outer Hardcover Casing (Extending 12px beyond page block) */}
+              {/* Outer Hardcover Casing Boards */}
               <div
-                className="absolute -inset-3 sm:-inset-4 bg-[#3a1317] rounded-2xl shadow-[0_40px_90px_-20px_rgba(0,0,0,0.95),0_20px_40px_rgba(0,0,0,0.8)] border border-[#521b21]"
+                className="absolute -inset-3 sm:-inset-4 bg-[#3a1317] rounded-2xl shadow-[0_35px_80px_-20px_rgba(26,28,27,0.35),0_15px_30px_rgba(26,28,27,0.18)] border border-[#521b21]"
                 style={{
                   backgroundImage:
                     "radial-gradient(#4d191f 15%, transparent 16%), radial-gradient(#4d191f 15%, transparent 16%)",
@@ -300,13 +339,12 @@ export default function BookPreviewPage() {
                   backgroundPosition: "0 0, 3px 3px",
                 }}
               >
-                {/* Gold perimeter rule stamped into casing */}
                 <div className="absolute inset-1.5 border border-[#a27b40]/30 rounded-xl pointer-events-none" />
               </div>
 
               {/* Realistic Stacked Paper Edge Block (showing book thickness ~200 pages) */}
               <div
-                className="absolute -inset-y-1.5 -inset-x-1.5 bg-[#f5efe3] rounded-lg border border-[#cfc8b8] shadow-md pointer-events-none"
+                className="absolute -inset-y-1.5 -inset-x-1.5 bg-[#f5efe3] rounded-lg border border-[#cfc8b8] shadow-xs pointer-events-none"
                 style={{
                   backgroundImage:
                     "repeating-linear-gradient(to bottom, #dcd5c5 0px, #dcd5c5 1px, #faf6ee 1px, #faf6ee 3px)",
@@ -327,48 +365,17 @@ export default function BookPreviewPage() {
                 className="relative w-full bg-[#fdfcf9] rounded-md overflow-hidden flex flex-col md:flex-row shadow-2xl z-10 border border-[#d8d1c2]"
                 style={{ transformStyle: "preserve-3d" }}
               >
-                {/* Left Page (Static Base) */}
+                {/* Left Page (Exact User Content from Editor) */}
                 <div className="flex-1 relative">
-                  {/* Deep Gutter Spine Shadow on inner fold */}
-                  <div className="absolute top-0 right-0 w-16 h-full bg-gradient-to-l from-black/25 via-black/8 to-transparent pointer-events-none z-30" />
+                  <div className="absolute top-0 right-0 w-16 h-full bg-gradient-to-l from-black/20 via-black/5 to-transparent pointer-events-none z-30" />
 
-                  {leftPageData && leftPageData.elements.length > 0 ? (
-                    <BookPageRenderer
-                      page={leftPageData}
-                      pageNumber={leftPageNum}
-                      isLeftPage={true}
-                      showWatermark={showWatermark}
-                      bookTitle={title}
-                    />
-                  ) : (
-                    /* High-fidelity editorial default layout for left page */
-                    <article className="paper-texture p-6 sm:p-8 md:p-12 relative flex flex-col justify-between min-h-[460px] sm:min-h-[520px]">
-                      {showWatermark && (
-                        <div className="absolute inset-0 pointer-events-none opacity-[0.06] flex items-center justify-center rotate-[-15deg]">
-                          <span className="font-serif text-3xl font-bold text-black">STORYBOUND PREVIEW</span>
-                        </div>
-                      )}
-                      <header className="flex justify-between pb-3 border-b border-[#e5dfd3]">
-                        <span className="font-mono text-[10px] tracking-widest text-[#827a6f]">CHAPTER II</span>
-                        <span className="font-serif italic text-xs text-[#9c9386]">A Royal Chronicle</span>
-                      </header>
-                      <div className="my-auto py-6 max-w-[420px] mx-auto text-center space-y-4">
-                        <span className="text-[10px] font-mono tracking-[0.3em] uppercase text-[#968977] block">
-                          Morning Reflections
-                        </span>
-                        <h1 className="font-serif text-2xl sm:text-3xl text-[#262422] font-medium">
-                          Morning in the Pink City
-                        </h1>
-                        <p className="font-serif text-[#322f2b] text-[15px] leading-relaxed text-justify">
-                          Before the bazaars of Johari awakened with their brilliant displays of beaten silver, dawn cast an ember radiance over the terracotta battlements. The morning air carried the scent of crushed marigolds and cardamom seeds from ancient palace fires.
-                        </p>
-                      </div>
-                      <footer className="pt-3 border-t border-[#e5dfd3] flex justify-between text-xs font-serif text-[#736c61]">
-                        <span>Storybound Press</span>
-                        <span>{leftPageNum}</span>
-                      </footer>
-                    </article>
-                  )}
+                  <BookPageRenderer
+                    page={leftPageData}
+                    pageNumber={leftPageNum}
+                    isLeftPage={true}
+                    showWatermark={showWatermark}
+                    bookTitle={title}
+                  />
 
                   {/* Corner Curl Clickable Prev Target */}
                   <div
@@ -384,49 +391,17 @@ export default function BookPreviewPage() {
                   />
                 </div>
 
-                {/* Right Page (Static Base) */}
+                {/* Right Page (Exact User Content from Editor) */}
                 <div className="flex-1 relative border-t md:border-t-0 md:border-l border-[#e8e4db]">
-                  {/* Deep Gutter Spine Shadow on inner fold */}
-                  <div className="absolute top-0 left-0 w-16 h-full bg-gradient-to-r from-black/25 via-black/8 to-transparent pointer-events-none z-30" />
+                  <div className="absolute top-0 left-0 w-16 h-full bg-gradient-to-r from-black/20 via-black/5 to-transparent pointer-events-none z-30" />
 
-                  {rightPageData && rightPageData.elements.length > 0 ? (
-                    <BookPageRenderer
-                      page={rightPageData}
-                      pageNumber={rightPageNum}
-                      isLeftPage={false}
-                      showWatermark={showWatermark}
-                      bookTitle={title}
-                    />
-                  ) : (
-                    /* High-fidelity editorial photograph layout for right page */
-                    <article className="paper-texture p-6 sm:p-8 md:p-12 relative flex flex-col justify-between min-h-[460px] sm:min-h-[520px]">
-                      {showWatermark && (
-                        <div className="absolute inset-0 pointer-events-none opacity-[0.06] flex items-center justify-center rotate-[-15deg]">
-                          <span className="font-serif text-3xl font-bold text-black">STORYBOUND PREVIEW</span>
-                        </div>
-                      )}
-                      <header className="flex justify-between pb-3 border-b border-[#e5dfd3]">
-                        <span className="font-serif italic text-xs text-[#9c9386]">Hawa Mahal</span>
-                        <span className="font-mono text-[10px] tracking-widest text-[#827a6f]">PLATE 08</span>
-                      </header>
-                      <div className="my-auto py-4 flex flex-col items-center">
-                        <div className="relative w-full max-w-[380px] p-2 bg-[#f8f5ee] rounded border border-[#dcd6c8]">
-                          <img
-                            alt="Jaipur Monument"
-                            className="w-full aspect-[4/3] object-cover rounded"
-                            src="https://lh3.googleusercontent.com/aida-public/AB6AXuBPPeqYeCMigBWahxqaSlsuyxKI5gxubGfVA0b-HhL0qi2FX4noduTVEz8clMJWsDQ67-pn5SA6dcCyZ0nx3qKWXLdww7XyWE-FR5z6ap2HNv57piSM3bKCz_NtBBnx942-R95cQAVHkDwnBrgLadvsXMDsbgv7N-16bT2LtmU6xZLXJuxTiRK-AnILGRr9CHPH5egD-KPvxPNPl-EjvYcaX02AVhrsGx72fuZF9X7ZSr1QBn3M6QGf"
-                          />
-                        </div>
-                        <span className="font-serif text-sm font-medium text-[#292724] mt-3">
-                          The Honeycomb Crown of Badi Choupad
-                        </span>
-                      </div>
-                      <footer className="pt-3 border-t border-[#e5dfd3] flex justify-between text-xs font-serif text-[#736c61]">
-                        <span>{rightPageNum}</span>
-                        <span className="uppercase text-[10px] tracking-wider">Jaipur Chronicle</span>
-                      </footer>
-                    </article>
-                  )}
+                  <BookPageRenderer
+                    page={rightPageData}
+                    pageNumber={rightPageNum}
+                    isLeftPage={false}
+                    showWatermark={showWatermark}
+                    bookTitle={title}
+                  />
 
                   {/* Corner Curl Clickable Next Target */}
                   <div
@@ -452,12 +427,11 @@ export default function BookPreviewPage() {
                       transformOrigin: "left center",
                       animation: "pageFlipNext 550ms cubic-bezier(0.25, 1, 0.5, 1) forwards",
                       transformStyle: "preserve-3d",
-                      boxShadow: "-15px 0 30px rgba(0,0,0,0.35)",
+                      boxShadow: "-15px 0 30px rgba(0,0,0,0.25)",
                     }}
                   >
-                    {/* Turning leaf face */}
                     <div className="w-full h-full bg-[#fdfcf9] paper-texture border-l border-[#d8d1c2] flex items-center justify-center p-8">
-                      <span className="font-serif italic text-xs text-[#8c8273]">Turning page...</span>
+                      <span className="font-serif italic text-xs text-[#747878]">Turning page...</span>
                     </div>
                   </div>
                 )}
@@ -469,12 +443,11 @@ export default function BookPreviewPage() {
                       transformOrigin: "right center",
                       animation: "pageFlipPrev 550ms cubic-bezier(0.25, 1, 0.5, 1) forwards",
                       transformStyle: "preserve-3d",
-                      boxShadow: "15px 0 30px rgba(0,0,0,0.35)",
+                      boxShadow: "15px 0 30px rgba(0,0,0,0.25)",
                     }}
                   >
-                    {/* Turning leaf face */}
                     <div className="w-full h-full bg-[#fdfcf9] paper-texture border-r border-[#d8d1c2] flex items-center justify-center p-8">
-                      <span className="font-serif italic text-xs text-[#8c8273]">Turning page...</span>
+                      <span className="font-serif italic text-xs text-[#747878]">Turning page...</span>
                     </div>
                   </div>
                 )}
@@ -484,16 +457,16 @@ export default function BookPreviewPage() {
         </div>
       </main>
 
-      {/* Floating Bottom Navigation Controller */}
+      {/* Floating Bottom Navigation Controller (Warm Editorial Stationery Light Mode) */}
       <footer className="fixed bottom-5 left-1/2 -translate-x-1/2 z-40 w-auto max-w-[95vw]">
-        <div className="bg-[#1e1c19]/95 backdrop-blur-md border border-[#3b362f] rounded-full px-4 py-2 flex items-center gap-2 sm:gap-4 shadow-2xl text-[#d4cfc7]">
+        <div className="bg-white/95 backdrop-blur-md border border-[#e2e3e1] rounded-full px-4 py-2 flex items-center gap-2 sm:gap-4 shadow-xl text-[#1a1c1b]">
           {/* Previous / Next buttons */}
-          <div className="flex items-center gap-1 border-r border-[#383530] pr-2 sm:pr-3">
+          <div className="flex items-center gap-1 border-r border-[#e2e3e1] pr-2 sm:pr-3">
             <button
               onClick={handlePrev}
               disabled={viewMode === "cover" || isFlipping}
               aria-label="Previous Page"
-              className="p-1.5 hover:bg-[#32302a] hover:text-white rounded-full transition-colors disabled:opacity-30"
+              className="p-1.5 hover:bg-[#f4f4f2] text-[#1a1c1b] rounded-full transition-colors disabled:opacity-30"
               title="Previous Page (Left Arrow)"
             >
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -501,7 +474,7 @@ export default function BookPreviewPage() {
               </svg>
             </button>
 
-            <span className="font-mono text-xs font-medium px-2 text-[#efebe4] whitespace-nowrap">
+            <span className="font-mono text-xs font-medium px-2 text-[#1a1c1b] whitespace-nowrap">
               {viewMode === "cover" ? "Cover View" : `Pages ${leftPageNum}–${rightPageNum} of ${totalPages}`}
             </span>
 
@@ -509,7 +482,7 @@ export default function BookPreviewPage() {
               onClick={handleNext}
               disabled={(viewMode === "spread" && currentSpreadIndex >= totalSpreads) || isFlipping}
               aria-label="Next Page"
-              className="p-1.5 hover:bg-[#32302a] hover:text-white rounded-full transition-colors disabled:opacity-30"
+              className="p-1.5 hover:bg-[#f4f4f2] text-[#1a1c1b] rounded-full transition-colors disabled:opacity-30"
               title="Next Page (Right Arrow)"
             >
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -519,7 +492,7 @@ export default function BookPreviewPage() {
           </div>
 
           {/* Mode Selector */}
-          <div className="flex items-center gap-1 bg-[#141412] p-0.5 rounded-full border border-[#2e2b26] text-xs">
+          <div className="flex items-center gap-1 bg-[#f4f4f2] p-0.5 rounded-full border border-[#e2e3e1] text-xs">
             <button
               onClick={() => {
                 if (viewMode !== "spread") {
@@ -529,8 +502,8 @@ export default function BookPreviewPage() {
               }}
               className={`px-3 py-1 rounded-full text-xs font-medium transition-all ${
                 viewMode === "spread"
-                  ? "bg-[#2f2c27] text-[#f2ede4] shadow-sm"
-                  : "text-[#8e8981] hover:text-white"
+                  ? "bg-white text-[#1a1c1b] shadow-xs font-semibold"
+                  : "text-[#747878] hover:text-[#1a1c1b]"
               }`}
             >
               Spread
@@ -544,8 +517,8 @@ export default function BookPreviewPage() {
               }}
               className={`px-3 py-1 rounded-full text-xs font-medium transition-all ${
                 viewMode === "cover"
-                  ? "bg-[#2f2c27] text-[#f2ede4] shadow-sm"
-                  : "text-[#8e8981] hover:text-white"
+                  ? "bg-white text-[#1a1c1b] shadow-xs font-semibold"
+                  : "text-[#747878] hover:text-[#1a1c1b]"
               }`}
             >
               Cover
@@ -555,27 +528,27 @@ export default function BookPreviewPage() {
           {/* Sound Toggle */}
           <button
             onClick={() => setSoundEnabled(!soundEnabled)}
-            className="p-1.5 hover:bg-[#32302a] rounded-full text-[#c4b9a5] hover:text-white transition-colors"
+            className="p-1.5 hover:bg-[#f4f4f2] rounded-full text-[#444748] hover:text-[#1a1c1b] transition-colors"
             title={soundEnabled ? "Mute Sound" : "Enable Sound"}
           >
-            {soundEnabled ? <Volume2 className="h-4 w-4 text-emerald-400" /> : <VolumeX className="h-4 w-4 text-neutral-400" />}
+            {soundEnabled ? <Volume2 className="h-4 w-4 text-emerald-700" /> : <VolumeX className="h-4 w-4 text-[#747878]" />}
           </button>
 
           {/* Zoom */}
-          <div className="hidden sm:flex items-center gap-1 border-l border-[#383530] pl-3">
+          <div className="hidden sm:flex items-center gap-1 border-l border-[#e2e3e1] pl-3">
             <button
               onClick={() => setZoomLevel((z) => Math.max(70, z - 10))}
-              className="p-1 hover:bg-[#32302a] hover:text-white rounded-full transition-colors"
+              className="p-1 hover:bg-[#f4f4f2] text-[#444748] hover:text-[#1a1c1b] rounded-full transition-colors"
               title="Zoom Out"
             >
               −
             </button>
-            <span className="font-mono text-[11px] text-[#a19a90] px-1 w-10 text-center">
+            <span className="font-mono text-[11px] text-[#747878] px-1 w-10 text-center">
               {zoomLevel}%
             </span>
             <button
               onClick={() => setZoomLevel((z) => Math.min(130, z + 10))}
-              className="p-1 hover:bg-[#32302a] hover:text-white rounded-full transition-colors"
+              className="p-1 hover:bg-[#f4f4f2] text-[#444748] hover:text-[#1a1c1b] rounded-full transition-colors"
               title="Zoom In"
             >
               +
