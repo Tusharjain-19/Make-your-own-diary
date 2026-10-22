@@ -3,7 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { useEditorStore } from "@/lib/editor/store";
+import { useEditorStore, createSampleCoverElements } from "@/lib/editor/store";
 import { useAuth } from "@/lib/auth/auth-context";
 import { loadBookFromIndexedDB } from "@/lib/storage/indexeddb";
 import { PageSize, El, PageData } from "@/lib/editor/types";
@@ -38,13 +38,28 @@ export default function BookPreviewPage() {
       const rawPages = getBookPages(bookId);
 
       if (rawBook && rawPages && rawPages.length > 0) {
-        const fullPages: PageData[] = rawPages.map((rp, idx) => ({
-          id: rp.id,
-          position: rp.position || idx + 1,
-          bg: rp.data?.bg || "#FAF8F5",
-          layoutId: rp.data?.layoutId,
-          elements: (rp.data?.elements || []) as El[],
-        }));
+        const fullPages: PageData[] = rawPages.map((rp, idx) => {
+          let elements: El[] = (rp.data?.elements || []) as El[];
+          if (
+            idx === 0 &&
+            (elements.length === 0 ||
+              elements.some((e) => e.id === "cover-title-1" && !elements.some((x) => x.id === "cover-badge-1")))
+          ) {
+            elements = createSampleCoverElements({
+              title: rawBook.title,
+              subtitle: rawBook.subtitle,
+              author: rawBook.author,
+              dates: rawBook.dates,
+            });
+          }
+          return {
+            id: rp.id,
+            position: rp.position || idx + 1,
+            bg: rp.data?.bg || "#FAF8F5",
+            layoutId: rp.data?.layoutId,
+            elements,
+          };
+        });
 
         setBook({
           id: rawBook.id,
@@ -272,10 +287,10 @@ export default function BookPreviewPage() {
             transformStyle: "preserve-3d",
           }}
         >
-          {/* ================= CLOSED HARDCOVER COVER VIEW ================= */}
+          {/* ================= CLOSED HARDCOVER COVER VIEW (EXACT USER COVER DESIGN FROM EDITOR) ================= */}
           {viewMode === "cover" && (
             <div
-              className={`relative w-80 sm:w-96 aspect-[3/4] bg-[#3a1317] rounded-r-2xl rounded-l-sm shadow-[0_30px_70px_-15px_rgba(26,28,27,0.35),0_12px_24px_rgba(26,28,27,0.2)] border border-[#5a1c22] p-8 flex flex-col justify-between cursor-pointer transition-all duration-700 hover:scale-[1.02] ${
+              className={`relative w-80 sm:w-[380px] md:w-[420px] aspect-[148/210] rounded-r-2xl rounded-l-sm shadow-[0_35px_80px_-15px_rgba(26,28,27,0.4),0_15px_30px_rgba(26,28,27,0.22)] border border-[#d8d1c2] cursor-pointer transition-all duration-700 hover:scale-[1.015] group overflow-visible ${
                 isFlipping ? "rotate-y-[-70deg] opacity-75" : "rotate-y-0 opacity-100"
               }`}
               onClick={handleNext}
@@ -283,40 +298,43 @@ export default function BookPreviewPage() {
               style={{
                 transformOrigin: "left center",
                 transformStyle: "preserve-3d",
-                backgroundImage:
-                  "radial-gradient(#4d191f 15%, transparent 16%), radial-gradient(#4d191f 15%, transparent 16%)",
-                backgroundSize: "6px 6px",
-                backgroundPosition: "0 0, 3px 3px",
               }}
             >
-              <div className="absolute inset-4 border border-[#d4af37]/50 rounded-r-lg pointer-events-none" />
-              <div className="absolute inset-5 border border-[#d4af37]/20 rounded-r-lg pointer-events-none" />
+              {/* Outer Hardcover Casing Boards */}
+              <div
+                className="absolute -inset-2.5 sm:-inset-3.5 bg-[#2c1d1a] rounded-r-2xl rounded-l-sm shadow-2xl -z-10 border border-[#48312c]"
+                style={{
+                  backgroundImage:
+                    "radial-gradient(#3d2824 15%, transparent 16%), radial-gradient(#3d2824 15%, transparent 16%)",
+                  backgroundSize: "6px 6px",
+                  backgroundPosition: "0 0, 3px 3px",
+                }}
+              >
+                <div className="absolute inset-1.5 border border-[#c4a468]/30 rounded-r-xl rounded-l-xs pointer-events-none" />
+              </div>
 
               {/* Silk bookmark ribbon hanging out */}
-              <div className="absolute -top-3.5 left-12 w-4 h-9 bg-[#8c1c24] rounded-t-sm shadow-md border-x border-[#590e14] z-20" />
-              <div className="absolute -bottom-5 left-14 w-3.5 h-10 bg-[#8c1c24] rounded-b-sm shadow-md border-x border-[#590e14] z-20 transform rotate-3" />
+              <div className="absolute -top-4 left-10 w-4 h-10 bg-[#8c1c24] rounded-t-sm shadow-md border-x border-[#590e14] z-40" />
+              <div className="absolute -bottom-6 left-12 w-3.5 h-12 bg-[#8c1c24] rounded-b-sm shadow-lg border-x border-[#590e14] z-40 transform rotate-3" />
 
-              {/* Spine edge crease */}
-              <div className="absolute top-0 left-5 bottom-0 w-1 bg-gradient-to-r from-black/40 via-transparent to-white/10" />
+              {/* Spine edge fold & crease along left binding */}
+              <div className="absolute top-0 left-0 bottom-0 w-8 bg-gradient-to-r from-black/30 via-black/10 to-transparent z-30 pointer-events-none rounded-l-sm" />
+              <div className="absolute top-0 left-7 bottom-0 w-0.5 bg-black/20 z-30 pointer-events-none" />
 
-              <div className="relative z-10 flex justify-between items-center text-[#d4af37] text-xs font-mono">
-                <span>VOL. I</span>
-                <span>BY {author.toUpperCase()}</span>
-              </div>
+              {/* The Actual Page 0 (Cover) from Editor */}
+              <BookPageRenderer
+                page={pages[0] || null}
+                pageNumber={1}
+                isCover={true}
+                showWatermark={showWatermark}
+                bookTitle={title}
+                className="rounded-r-xl rounded-l-xs"
+              />
 
-              <div className="relative z-10 text-center space-y-3 my-auto">
-                <div className="h-0.5 w-12 bg-[#d4af37]/70 mx-auto" />
-                <h2 className="font-serif text-3xl sm:text-4xl text-[#fce8ba] font-normal tracking-wide gold-foil drop-shadow-xs">
-                  {title}
-                </h2>
-                <p className="font-serif italic text-sm text-[#e8cda2]/90 tracking-wider">
-                  Personal Travel Chronicle
-                </p>
-                <div className="h-0.5 w-12 bg-[#d4af37]/70 mx-auto" />
-              </div>
-
-              <div className="relative z-10 text-center text-[#d4af37]/80 text-[11px] font-mono tracking-widest uppercase">
-                STORYBOUND PRIVATE PRESS · HARDBOUND
+              {/* Floating "Click to open book" guide */}
+              <div className="absolute bottom-3 right-4 z-40 flex items-center gap-1.5 px-3 py-1 rounded-full bg-black/70 hover:bg-black/85 text-white text-[10px] font-mono tracking-wider backdrop-blur pointer-events-none transition-all shadow-md">
+                <span>Click to Open Book</span>
+                <span className="text-xs">→</span>
               </div>
             </div>
           )}

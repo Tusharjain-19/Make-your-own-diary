@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { immer } from "zustand/middleware/immer";
-import { BookModel, El, PageData, TextEl, ImageEl, ShapeEl } from "./types";
+import { BookModel, El, PageData, TextEl, ImageEl, ShapeEl, IconEl } from "./types";
 import { saveBookToIndexedDB, enqueueOfflineSave } from "@/lib/storage/indexeddb";
 
 export type PanelType = "themes" | "layouts" | "uploads" | "text" | "elements" | "handwriting" | null;
@@ -808,7 +808,7 @@ export function createSamplePageElements(themeHeadingFont = "Playfair Display"):
   return [sampleImage, sampleHeading, sampleBody];
 }
 
-// Pre-designed cover elements for Page 1 / Cover (Day 6+ / User request #2)
+// Pre-designed fun travel cover elements for Page 1 / Cover (User Request: Fun Travel Design)
 export function createSampleCoverElements(options?: {
   title?: string;
   subtitle?: string;
@@ -818,123 +818,185 @@ export function createSampleCoverElements(options?: {
   accent?: string;
 }): El[] {
   const headingFont = options?.font || "Playfair Display";
-  const accentColor = options?.accent || "#B8A88A";
-  const bookTitle = options?.title || "Jaipur Trip 2026";
-  const bookSubtitle = options?.subtitle || "Memories & Architecture of the Pink City";
-  const authorName = options?.author ? `By ${options.author}` : "By Tushar Jain";
-  const editionYear = options?.dates || "Winter 2026 · Limited Edition";
+  const bookTitle = options?.title ? options.title.toUpperCase() : "JAIPUR";
+  const bookSubtitle = options?.subtitle || "The Royal Travel Diary & Wanderlust Chronicles";
+  const authorName = options?.author ? `EXPLORER: ${options.author.toUpperCase()}` : "EXPLORER: TUSHAR JAIN";
+  const expeditionDates = options?.dates ? `WINTER EXPEDITION · ${options.dates}` : "WINTER EXPEDITION · 2026";
 
-  // 1. Cover Title
+  // 1. Travel Expedition Pill Badge
+  const coverBadge: TextEl = {
+    id: "cover-badge-1",
+    type: "text",
+    text: "★ EXPEDITION LOG · 26.9124° N, 75.7873° E · VOL. 01 ★",
+    font: "Space Grotesk",
+    size: 7.5,
+    weight: 600,
+    color: "#7A1F2B",
+    align: "center",
+    lineHeight: 1.2,
+    letterSpacing: 1.5,
+    x: 14,
+    y: 12,
+    w: 120,
+    h: 8,
+    rot: 0,
+    z: 1,
+    themeToken: "accent",
+  };
+
+  // 2. Bold Cover Title
   const coverTitle: TextEl = {
     id: "cover-title-1",
     type: "text",
     text: bookTitle,
     font: headingFont,
-    size: 28,
-    weight: 700,
+    size: 32,
+    weight: 800,
     color: "#1A1A1A",
     align: "center",
-    lineHeight: 1.15,
-    letterSpacing: 0.5,
+    lineHeight: 1.1,
+    letterSpacing: 3,
     x: 14,
-    y: 24,
+    y: 22,
     w: 120,
-    h: 22,
+    h: 20,
     rot: 0,
     z: 2,
     themeToken: "primary",
   };
 
-  // 2. Gold Flourish Divider
-  const goldDivider: ShapeEl = {
-    id: "cover-divider-1",
-    type: "shape",
-    shape: "divider-rule",
-    x: 34,
-    y: 48,
-    w: 80,
-    h: 4,
-    rot: 0,
-    z: 3,
-    stroke: accentColor,
-    strokeW: 0.75,
-    themeToken: "accent",
-  };
-
-  // 3. Hero Cover Keepsake Photo
-  const coverHero: ImageEl = {
-    id: "cover-hero-1",
-    type: "image",
-    src: "https://images.unsplash.com/photo-1599661046289-e31897846e41?w=1200&auto=format&fit=crop&q=80",
-    x: 18,
-    y: 56,
-    w: 112,
-    h: 96,
-    rot: 0,
-    z: 1,
-    frame: "none",
-    radius: 3,
-    border: { w: 0.8, color: "#D4D0C8", style: "solid" },
-    opacity: 1,
-  };
-
-  // 4. Subtitle
+  // 3. Subtitle / Tagline
   const coverSubtitle: TextEl = {
     id: "cover-subtitle-1",
     type: "text",
     text: bookSubtitle,
-    font: headingFont,
+    font: "Caveat",
     size: 13,
-    weight: 400,
-    italic: true,
+    weight: 500,
     color: "#6A5D43",
     align: "center",
-    lineHeight: 1.3,
-    letterSpacing: 0,
-    x: 16,
-    y: 158,
-    w: 116,
-    h: 16,
+    lineHeight: 1.25,
+    letterSpacing: 0.2,
+    x: 14,
+    y: 44,
+    w: 120,
+    h: 9,
     rot: 0,
+    z: 3,
+    themeToken: "accent",
+  };
+
+  // 4. Polaroid Travel Photo (with slight fun tilt)
+  const coverHero: ImageEl = {
+    id: "cover-hero-1",
+    type: "image",
+    src: "https://images.unsplash.com/photo-1599661046289-e31897846e41?w=1200&auto=format&fit=crop&q=80",
+    x: 28,
+    y: 55,
+    w: 92,
+    h: 98,
+    rot: 1.5,
     z: 4,
-    themeToken: "accent",
+    frame: "polaroid",
+    radius: 2,
+    opacity: 1,
   };
 
-  // 5. Cute Storybound Book Emblem
-  const coverEmblem: ShapeEl = {
-    id: "cover-emblem-1",
+  // 5. Washi Tape sticker on top of polaroid
+  const coverTape: ShapeEl = {
+    id: "cover-tape-1",
     type: "shape",
-    shape: "cute-book",
-    x: 64,
-    y: 176,
-    w: 20,
-    h: 16,
-    rot: 0,
+    shape: "tape",
+    x: 56,
+    y: 51,
+    w: 36,
+    h: 7,
+    rot: -2,
     z: 5,
-    fill: accentColor,
+    fill: "rgba(220, 185, 120, 0.78)",
     themeToken: "accent",
   };
 
-  // 6. Author & Edition Line
+  // 6. Vintage Air Mail / Wanderlust Stamp in the corner
+  const coverStamp: ShapeEl = {
+    id: "cover-stamp-1",
+    type: "shape",
+    shape: "stamp-wanderlust",
+    x: 110,
+    y: 136,
+    w: 25,
+    h: 25,
+    rot: 12,
+    z: 6,
+    stroke: "#7A1F2B",
+    strokeW: 0.8,
+    themeToken: "accent",
+  };
+
+  // 7. Compass travel icon
+  const coverCompass: IconEl = {
+    id: "cover-compass-1",
+    type: "icon",
+    iconId: "compass",
+    color: "#7A1F2B",
+    x: 14,
+    y: 142,
+    w: 16,
+    h: 16,
+    rot: -8,
+    z: 7,
+  };
+
+  // 8. Explorer Credits
   const coverAuthor: TextEl = {
     id: "cover-author-1",
     type: "text",
-    text: `${authorName} · ${editionYear}`,
+    text: `${authorName} · ${expeditionDates}`,
     font: "Inter",
-    size: 9.5,
-    weight: 500,
-    color: "#858383",
+    size: 8.5,
+    weight: 600,
+    color: "#1A1A1A",
     align: "center",
     lineHeight: 1.4,
     letterSpacing: 1.2,
-    x: 16,
-    y: 194,
-    w: 116,
+    x: 14,
+    y: 172,
+    w: 120,
     h: 10,
     rot: 0,
-    z: 6,
-    themeToken: "muted",
+    z: 8,
   };
 
-  return [coverTitle, goldDivider, coverHero, coverSubtitle, coverEmblem, coverAuthor];
+  // 9. Edition Line
+  const coverEdition: TextEl = {
+    id: "cover-edition-1",
+    type: "text",
+    text: "Handcrafted Keepsake Edition · Storybound Press",
+    font: "Lora",
+    size: 8.5,
+    weight: 400,
+    italic: true,
+    color: "#858383",
+    align: "center",
+    lineHeight: 1.3,
+    letterSpacing: 0.5,
+    x: 14,
+    y: 184,
+    w: 120,
+    h: 9,
+    rot: 0,
+    z: 9,
+  };
+
+  return [
+    coverBadge,
+    coverTitle,
+    coverSubtitle,
+    coverHero,
+    coverTape,
+    coverStamp,
+    coverCompass,
+    coverAuthor,
+    coverEdition,
+  ];
 }

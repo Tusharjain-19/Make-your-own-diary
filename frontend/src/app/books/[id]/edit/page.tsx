@@ -81,8 +81,13 @@ export default function BookEditorPage() {
       // Format into BookModel
       const pages = rawPages.map((p, idx) => {
         let elements: El[] = (p.data?.elements || []) as El[];
-        // Pre-designed cover for Page 1 / Cover (User Request #2)
-        if (idx === 0 && (elements.length === 0 || (elements.length === 1 && (elements[0] as TextEl).text?.includes("JAIPUR")))) {
+        // Pre-designed fun travel cover for Page 1 / Cover
+        if (
+          idx === 0 &&
+          (elements.length === 0 ||
+            (elements.length === 1 && (elements[0] as TextEl).text?.includes("JAIPUR")) ||
+            elements.some((e) => e.id === "cover-title-1" && !elements.some((x) => x.id === "cover-badge-1")))
+        ) {
           elements = createSampleCoverElements({
             title: rawBook.title,
             subtitle: rawBook.subtitle,

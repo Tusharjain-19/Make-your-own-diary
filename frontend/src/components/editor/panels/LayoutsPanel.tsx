@@ -21,6 +21,7 @@ export function LayoutsPanel() {
   const categories = [
     { id: "all", label: "All" },
     { id: "cover", label: "Covers" },
+    { id: "travel", label: "Travel" },
     { id: "photo", label: "Photo" },
     { id: "split", label: "Split" },
     { id: "grid", label: "Grid" },
