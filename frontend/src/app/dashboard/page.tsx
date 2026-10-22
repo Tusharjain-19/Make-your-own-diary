@@ -4,7 +4,6 @@ import * as React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
-  BookOpen,
   Plus,
   LogOut,
   Shield,
@@ -14,9 +13,11 @@ import {
   Layers,
   UserCheck,
   ArrowRight,
+  BookOpen,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { StoryboundLogo } from "@/components/ui/logo";
 import {
   Dialog,
   DialogContent,
@@ -90,14 +91,7 @@ export default function DashboardPage() {
       <header className="sticky top-0 z-40 border-b border-border bg-surface/80 backdrop-blur-md">
         <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4 sm:px-6">
           <div className="flex items-center gap-3">
-            <Link href="/" className="flex items-center gap-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-[8px] bg-accent text-white">
-                <BookOpen className="h-4 w-4" />
-              </div>
-              <span className="font-serif text-lg font-semibold tracking-tight text-accent">
-                Storybound
-              </span>
-            </Link>
+            <StoryboundLogo size="sm" />
             <span className="text-xs text-text-muted">/ Dashboard</span>
           </div>
 
@@ -131,7 +125,7 @@ export default function DashboardPage() {
                 <span className="font-mono text-xs text-text-muted">[{user.id}]</span>
               </h2>
               <p className="text-xs text-text-muted">
-                Storage query: <code className="rounded bg-accent-soft px-1.5 py-0.5 text-text font-mono text-[11px]">WHERE user_id = &apos;{user.id}&apos;</code> — Strict data boundary enforced.
+                Storage query: <code className="rounded bg-accent-soft px-1.5 py-0.5 text-text font-mono text-[11px]">WHERE user_id = &apos;{user.id}&apos;</code> · Strict data boundary enforced.
               </p>
             </div>
 

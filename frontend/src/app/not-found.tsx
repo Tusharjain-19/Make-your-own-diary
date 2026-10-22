@@ -1,19 +1,15 @@
 import Link from "next/link";
-import { BookOpen, ArrowLeft, Home } from "lucide-react";
+import { ArrowLeft, Home } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { StoryboundLogo } from "@/components/ui/logo";
 
 export default function NotFoundPage() {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-bg px-6 py-12 text-center">
       {/* Brand */}
-      <Link href="/" className="mb-10 inline-flex items-center gap-2.5">
-        <div className="flex h-10 w-10 items-center justify-center rounded-[10px] bg-accent text-white shadow-sm">
-          <BookOpen className="h-5 w-5" />
-        </div>
-        <span className="font-serif text-2xl font-semibold tracking-tight text-accent">
-          Storybound
-        </span>
-      </Link>
+      <div className="mb-10">
+        <StoryboundLogo size="lg" href="/" />
+      </div>
 
       {/* Error Badge */}
       <div className="mb-6 inline-flex items-center rounded-full border border-border bg-surface px-4 py-1.5 text-xs font-mono text-text-muted shadow-sm">

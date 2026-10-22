@@ -122,6 +122,12 @@ export default function BookEditorPage() {
     return () => window.removeEventListener("online", handleOnline);
   }, [bookId, isInitialized, getBookById, getBookPages, setBook]);
 
+  // Dynamic document title based on current book
+  React.useEffect(() => {
+    const currentTitle = book?.title?.trim() || "Book Editor";
+    document.title = `${currentTitle} | Storybound`;
+  }, [book?.title]);
+
   // Global Keyboard Shortcuts (from frontend.md and Day 6 prompt)
   React.useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {

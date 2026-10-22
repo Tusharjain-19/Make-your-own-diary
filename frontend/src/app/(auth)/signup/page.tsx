@@ -3,10 +3,11 @@
 import * as React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { BookOpen, ArrowRight, ShieldCheck } from "lucide-react";
+import { ArrowRight, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
+import { StoryboundLogo } from "@/components/ui/logo";
 import { useAuth } from "@/lib/auth/auth-context";
 
 export default function SignupPage() {
@@ -50,16 +51,9 @@ export default function SignupPage() {
     <div className="flex min-h-screen flex-col items-center justify-center bg-bg px-4 py-12">
       <div className="w-full max-w-md space-y-6">
         {/* Brand Header */}
-        <div className="text-center">
-          <Link href="/" className="inline-flex items-center gap-2.5">
-            <div className="flex h-10 w-10 items-center justify-center rounded-[10px] bg-accent text-white shadow-sm">
-              <BookOpen className="h-5 w-5" />
-            </div>
-            <span className="font-serif text-2xl font-semibold tracking-tight text-accent">
-              Storybound
-            </span>
-          </Link>
-          <h1 className="mt-4 font-serif text-2xl font-medium tracking-tight text-text">
+        <div className="text-center flex flex-col items-center">
+          <StoryboundLogo size="lg" />
+          <h1 className="mt-5 font-serif text-2xl font-medium tracking-tight text-text">
             Start your story
           </h1>
           <p className="mt-1 text-sm text-text-muted">

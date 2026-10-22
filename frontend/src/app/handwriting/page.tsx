@@ -2,9 +2,10 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { BookOpen, PenTool, ArrowLeft } from "lucide-react";
+import { PenTool, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
+import { StoryboundLogo } from "@/components/ui/logo";
 import { useAuth } from "@/lib/auth/auth-context";
 
 export default function HandwritingPage() {
@@ -15,14 +16,7 @@ export default function HandwritingPage() {
       <header className="sticky top-0 z-40 border-b border-border bg-surface/80 backdrop-blur-md">
         <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4 sm:px-6">
           <div className="flex items-center gap-3">
-            <Link href="/dashboard" className="flex items-center gap-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-[8px] bg-accent text-white">
-                <BookOpen className="h-4 w-4" />
-              </div>
-              <span className="font-serif text-lg font-semibold tracking-tight text-accent">
-                Storybound
-              </span>
-            </Link>
+            <StoryboundLogo size="sm" href="/dashboard" />
             <span className="text-xs text-text-muted">/ Handwriting Studio</span>
           </div>
 
@@ -38,7 +32,7 @@ export default function HandwritingPage() {
         <div className="mb-8">
           <div className="mb-2 inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-text-muted">
             <PenTool className="h-3.5 w-3.5 text-accent" />
-            Signature Feature (Day 15–17)
+            Signature Feature (Day 15 to 17)
           </div>
           <h1 className="font-serif text-3xl font-medium tracking-tight text-text">
             My Handwriting Fonts

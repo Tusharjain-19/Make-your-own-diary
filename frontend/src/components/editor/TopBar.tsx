@@ -18,6 +18,7 @@ import {
   Download,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { StoryboundLogo } from "@/components/ui/logo";
 import { useEditorStore } from "@/lib/editor/store";
 
 export function TopBar() {
@@ -61,11 +62,12 @@ export function TopBar() {
 
   return (
     <header className="flex h-14 shrink-0 items-center justify-between border-b border-border bg-surface px-4 z-40 select-none">
-      {/* Left: Back Arrow & Book Title */}
-      <div className="flex items-center gap-3">
+      {/* Left: Brand, Back & Book Title */}
+      <div className="flex items-center gap-2.5">
+        <StoryboundLogo size="sm" iconOnly href="/dashboard" />
         <Link href="/dashboard">
-          <Button variant="ghost" size="sm" className="h-8 text-xs text-text-muted hover:text-text">
-            <ArrowLeft className="mr-1.5 h-3.5 w-3.5" /> Dashboard
+          <Button variant="ghost" size="sm" className="h-8 text-xs text-text-muted hover:text-text px-2">
+            <ArrowLeft className="mr-1 h-3.5 w-3.5" /> Dashboard
           </Button>
         </Link>
 

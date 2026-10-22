@@ -3,10 +3,11 @@
 import * as React from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { BookOpen, ArrowRight, Sparkles, UserCheck } from "lucide-react";
+import { ArrowRight, UserCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
+import { StoryboundLogo } from "@/components/ui/logo";
 import { useAuth } from "@/lib/auth/auth-context";
 
 function LoginForm() {
@@ -62,16 +63,9 @@ function LoginForm() {
     <div className="flex min-h-screen flex-col items-center justify-center bg-bg px-4 py-12">
       <div className="w-full max-w-md space-y-6">
         {/* Brand Header */}
-        <div className="text-center">
-          <Link href="/" className="inline-flex items-center gap-2.5">
-            <div className="flex h-10 w-10 items-center justify-center rounded-[10px] bg-accent text-white shadow-sm">
-              <BookOpen className="h-5 w-5" />
-            </div>
-            <span className="font-serif text-2xl font-semibold tracking-tight text-accent">
-              Storybound
-            </span>
-          </Link>
-          <h1 className="mt-4 font-serif text-2xl font-medium tracking-tight text-text">
+        <div className="text-center flex flex-col items-center">
+          <StoryboundLogo size="lg" />
+          <h1 className="mt-5 font-serif text-2xl font-medium tracking-tight text-text">
             Welcome back
           </h1>
           <p className="mt-1 text-sm text-text-muted">
@@ -176,7 +170,7 @@ function LoginForm() {
                   className="h-8 text-xs justify-start"
                   onClick={() => quickLogin("tushar@storybound.app")}
                 >
-                  <Sparkles className="mr-1 h-3 w-3 text-amber-600" />
+                  <UserCheck className="mr-1.5 h-3.5 w-3.5 text-text-muted" />
                   Tushar (Jaipur)
                 </Button>
                 <Button
@@ -186,7 +180,7 @@ function LoginForm() {
                   className="h-8 text-xs justify-start"
                   onClick={() => quickLogin("sarah@storybound.app")}
                 >
-                  <Sparkles className="mr-1 h-3 w-3 text-emerald-600" />
+                  <UserCheck className="mr-1.5 h-3.5 w-3.5 text-text-muted" />
                   Sarah (Goa)
                 </Button>
               </div>

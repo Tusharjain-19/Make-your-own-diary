@@ -164,7 +164,7 @@
     },
     "defaults": { "marginMm": 10, "headingSize": 32, "bodySize": 10, "lineHeight": 1.4 },
     "layouts": ["L04", "L05", "L06", "L07", "L10"],
-    "decor": ["geo-circle", "bright-block", "star-badge"],
+    "decor": ["geo-circle", "bright-block", "stationery-badge"],
     "cover": { "templates": ["pop-cover-a", "pop-cover-b"] }
   },
   {

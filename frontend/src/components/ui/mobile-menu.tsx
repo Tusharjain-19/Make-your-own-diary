@@ -2,8 +2,9 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { Menu, X, BookOpen, ArrowRight } from "lucide-react";
+import { Menu, X, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { StoryboundLogo } from "@/components/ui/logo";
 
 interface MobileMenuLink {
   href: string;
@@ -71,18 +72,9 @@ export function MobileMenu({
       >
         {/* Drawer Header */}
         <div className="flex items-center justify-between border-b border-border px-5 py-4">
-          <Link
-            href="/"
-            className="flex items-center gap-2"
-            onClick={() => setIsOpen(false)}
-          >
-            <div className="flex h-7 w-7 items-center justify-center rounded-[6px] bg-accent text-white">
-              <BookOpen className="h-3.5 w-3.5" />
-            </div>
-            <span className="font-serif text-base font-semibold tracking-tight text-accent">
-              Storybound
-            </span>
-          </Link>
+          <div onClick={() => setIsOpen(false)}>
+            <StoryboundLogo size="sm" />
+          </div>
           <button
             onClick={() => setIsOpen(false)}
             className="flex h-8 w-8 items-center justify-center rounded-[8px] text-text-muted hover:text-text hover:bg-accent-soft transition-colors"

@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { Download, Sparkles } from "lucide-react";
+import { Download, PenTool } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useEditorStore } from "@/lib/editor/store";
 import { TextEl } from "@/lib/editor/types";
@@ -28,7 +28,7 @@ export function HandwritingPanel() {
     <div className="p-4 space-y-4">
       <div>
         <div className="inline-flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-accent mb-1">
-          <Sparkles className="h-3 w-3" /> Signature Feature
+          <PenTool className="h-3 w-3" /> Signature Feature
         </div>
         <h3 className="font-serif text-base font-medium text-text">My Handwriting</h3>
         <p className="text-xs text-text-muted mt-0.5">

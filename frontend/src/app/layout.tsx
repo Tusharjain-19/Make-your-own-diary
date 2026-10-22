@@ -20,7 +20,7 @@ const playfair = Playfair_Display({
 
 export const metadata: Metadata = {
   title: {
-    default: "Storybound — Your memories. Your stories. Your handwriting. Your book.",
+    default: "Storybound | Personal Books and Travel Diaries",
     template: "%s | Storybound",
   },
   description:
@@ -30,7 +30,7 @@ export const metadata: Metadata = {
   },
   metadataBase: new URL("https://storybound.app"),
   openGraph: {
-    title: "Storybound — Your memories. Your stories. Your handwriting. Your book.",
+    title: "Storybound | Personal Books and Travel Diaries",
     description:
       "Turn phone photos into a keepsake hardcover or print-ready PDF, styled with 10 editorial themes, and typeset in your own personal handwriting font.",
     type: "website",

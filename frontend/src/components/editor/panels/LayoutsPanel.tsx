@@ -117,7 +117,7 @@ export function LayoutsPanel() {
           {
             id: `author-${Date.now()}`,
             type: "text",
-            text: "— Aldous Huxley",
+            text: "Aldous Huxley",
             font: "Inter",
             size: 11,
             weight: 500,

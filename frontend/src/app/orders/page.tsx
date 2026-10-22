@@ -2,9 +2,10 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { BookOpen, Package, ArrowLeft } from "lucide-react";
+import { Package, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
+import { StoryboundLogo } from "@/components/ui/logo";
 import { useAuth } from "@/lib/auth/auth-context";
 
 export default function OrdersPage() {
@@ -15,14 +16,7 @@ export default function OrdersPage() {
       <header className="sticky top-0 z-40 border-b border-border bg-surface/80 backdrop-blur-md">
         <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4 sm:px-6">
           <div className="flex items-center gap-3">
-            <Link href="/dashboard" className="flex items-center gap-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-[8px] bg-accent text-white">
-                <BookOpen className="h-4 w-4" />
-              </div>
-              <span className="font-serif text-lg font-semibold tracking-tight text-accent">
-                Storybound
-              </span>
-            </Link>
+            <StoryboundLogo size="sm" href="/dashboard" />
             <span className="text-xs text-text-muted">/ Print Orders</span>
           </div>
 

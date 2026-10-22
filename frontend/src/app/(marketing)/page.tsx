@@ -4,7 +4,6 @@ import * as React from "react";
 import Link from "next/link";
 import {
   BookOpen,
-  Sparkles,
   ArrowRight,
   PenTool,
   CheckCircle2,
@@ -15,6 +14,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { MobileMenu } from "@/components/ui/mobile-menu";
+import { StoryboundLogo } from "@/components/ui/logo";
 import { useAuth } from "@/lib/auth/auth-context";
 import { themes } from "@/lib/themes";
 
@@ -36,11 +36,11 @@ export default function MarketingLandingPage() {
   const faqs = [
     {
       q: "How does the 'My Handwriting' font feature work?",
-      a: "You download and print our simple A4 glyph template sheet, write out the characters (A–Z, a–z, 0–9, and punctuation) with a dark pen, and take a photo with your phone. Our app corrects the perspective, cleans the ink strokes, vectorizes the glyphs, and compiles a real font file saved exclusively to your account.",
+      a: "You download and print our simple A4 glyph template sheet, write out the characters (A-Z, a-z, 0-9, and punctuation) with a dark pen, and take a photo with your phone. Our app corrects the perspective, cleans the ink strokes, vectorizes the glyphs, and compiles a real font file saved exclusively to your account.",
     },
     {
       q: "What page sizes are supported?",
-      a: "Storybound supports A5 Portrait (148 × 210 mm — perfect for travel diaries), A4 Portrait (210 × 297 mm — great for family albums), and Square (203 × 203 mm / 8×8 in — ideal for Instagram-style collages). All units inside the editor are stored in exact millimeters.",
+      a: "Storybound supports A5 Portrait (148 × 210 mm, perfect for travel diaries), A4 Portrait (210 × 297 mm, great for family albums), and Square (203 × 203 mm / 8×8 in, ideal for Instagram-style collages). All units inside the editor are stored in exact millimeters.",
     },
     {
       q: "How much does the PDF export cost?",
@@ -61,14 +61,7 @@ export default function MarketingLandingPage() {
       {/* Top Navigation */}
       <header className="sticky top-0 z-50 border-b border-border bg-surface/85 backdrop-blur-md">
         <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4 sm:px-6">
-          <Link href="/" className="flex items-center gap-2.5">
-            <div className="flex h-8 w-8 items-center justify-center rounded-[8px] bg-accent text-white shadow-sm">
-              <BookOpen className="h-4 w-4" />
-            </div>
-            <span className="font-serif text-lg font-semibold tracking-tight text-accent">
-              Storybound
-            </span>
-          </Link>
+          <StoryboundLogo size="md" />
 
           <nav className="hidden md:flex items-center gap-6 text-sm text-text-muted">
             <Link href="#how-it-works" className="hover:text-text transition-colors">
@@ -124,8 +117,10 @@ export default function MarketingLandingPage() {
       <section className="relative overflow-hidden pt-12 pb-16 sm:pt-16 sm:pb-20 md:pt-24 md:pb-28">
         <div className="mx-auto max-w-6xl px-4 sm:px-6 text-center">
           <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-border bg-surface px-3 py-1 text-xs font-medium text-text-muted shadow-sm">
-            <Sparkles className="h-3.5 w-3.5 text-accent" />
-            The Personal Book Studio
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald-600 animate-pulse" />
+            <span>Storybound 1.0</span>
+            <span className="text-border">·</span>
+            <span className="text-text font-medium">Personal Book Studio</span>
           </div>
 
           <h1 className="mx-auto max-w-4xl font-serif text-3xl font-normal tracking-tight text-text sm:text-5xl md:text-6xl lg:text-7xl leading-[1.12]">
@@ -141,7 +136,7 @@ export default function MarketingLandingPage() {
           <div className="mt-7 flex flex-col sm:flex-row items-center justify-center gap-3 sm:mt-8">
             <Link href={user ? "/books/new" : "/signup"}>
               <Button size="lg" className="w-full sm:w-auto h-12 px-7 text-sm font-medium gap-2">
-                Start your story — Free
+                Start Your Story (Free)
                 <ArrowRight className="h-4 w-4" />
               </Button>
             </Link>
@@ -427,7 +422,7 @@ export default function MarketingLandingPage() {
                     &ldquo;Some memories are too precious to be written in Helvetica.&rdquo;
                   </p>
                   <div className="mt-3 flex items-center justify-between text-[11px] text-text-muted">
-                    <span>— Tushar&apos;s Hand</span>
+                    <span>Tushar&apos;s Handwriting</span>
                     <span>UnitsPerEm: 1000</span>
                   </div>
                 </div>
@@ -602,13 +597,12 @@ export default function MarketingLandingPage() {
         <div className="mx-auto max-w-6xl px-4 sm:px-6">
           <div className="flex flex-col gap-8 md:flex-row md:items-center md:justify-between">
             {/* Brand */}
-            <Link href="/" className="flex items-center gap-2.5">
-              <div className="flex h-7 w-7 items-center justify-center rounded-[6px] bg-accent text-white">
-                <BookOpen className="h-3.5 w-3.5" />
-              </div>
-              <span className="font-serif text-base font-semibold text-accent">Storybound</span>
-              <span className="hidden sm:inline text-text-muted">· Your memories, your stories, your handwriting.</span>
-            </Link>
+            <div className="flex items-center gap-3">
+              <StoryboundLogo size="sm" />
+              <span className="hidden sm:inline text-text-muted text-[11px]">
+                · Your memories, your stories, your handwriting.
+              </span>
+            </div>
 
             {/* Footer Links */}
             <nav className="flex flex-wrap items-center gap-x-6 gap-y-2">

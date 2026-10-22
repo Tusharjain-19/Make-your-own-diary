@@ -2,9 +2,10 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { BookOpen, ArrowRight, ArrowLeft, Palette } from "lucide-react";
+import { ArrowRight, ArrowLeft, Palette } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
+import { StoryboundLogo } from "@/components/ui/logo";
 import { useAuth } from "@/lib/auth/auth-context";
 import { themes } from "@/lib/themes";
 
@@ -17,14 +18,7 @@ export default function ThemesGalleryPage() {
       <header className="sticky top-0 z-50 border-b border-border bg-surface/85 backdrop-blur-md">
         <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4 sm:px-6">
           <div className="flex items-center gap-3">
-            <Link href="/" className="flex items-center gap-2.5">
-              <div className="flex h-8 w-8 items-center justify-center rounded-[8px] bg-accent text-white shadow-sm">
-                <BookOpen className="h-4 w-4" />
-              </div>
-              <span className="font-serif text-lg font-semibold tracking-tight text-accent">
-                Storybound
-              </span>
-            </Link>
+            <StoryboundLogo size="sm" href="/" />
             <span className="text-xs text-text-muted">/ Theme Gallery</span>
           </div>
 
