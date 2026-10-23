@@ -97,21 +97,24 @@ export default function BookOrderFlowPage() {
     }
   };
 
+  const [formError, setFormError] = React.useState<string | null>(null);
+
   const handlePlaceOrder = async () => {
+    setFormError(null);
     if (!address.fullName.trim()) {
-      alert("Please enter recipient name");
+      setFormError("Please enter recipient name");
       return;
     }
     if (!isValidIndianMobile(address.phone)) {
-      alert("Please enter a valid 10-digit Indian phone number");
+      setFormError("Please enter a valid 10-digit Indian phone number");
       return;
     }
     if (!isValidIndianPinCode(address.pinCode)) {
-      alert("Please enter a valid 6-digit Indian PIN code");
+      setFormError("Please enter a valid 6-digit Indian PIN code");
       return;
     }
     if (!address.streetAddress.trim()) {
-      alert("Please enter street address");
+      setFormError("Please enter street address");
       return;
     }
 
@@ -569,6 +572,13 @@ export default function BookOrderFlowPage() {
                   <span>Total Amount</span>
                   <span>₹{(pricing.totalPaise / 100).toFixed(2)}</span>
                 </div>
+
+                {/* Form Error Banner */}
+                {formError && (
+                  <div className="rounded-lg bg-rose-50 border border-rose-200 p-2.5 text-xs text-rose-700 font-medium">
+                    {formError}
+                  </div>
+                )}
 
                 {/* Checkout Button */}
                 <Button

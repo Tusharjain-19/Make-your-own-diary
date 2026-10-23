@@ -40,12 +40,25 @@ export function StoryboundLogo({
       {/* Editorial Open Book Emblem with Bookmark Ribbon */}
       <div
         className={`relative flex items-center justify-center rounded-[8px] bg-[#1a1c1b] text-white shadow-sm transition-transform group-hover:scale-105 shrink-0 ${iconDimensions}`}
+        style={{
+          width: size === "sm" ? 28 : size === "lg" ? 44 : 32,
+          height: size === "sm" ? 28 : size === "lg" ? 44 : 32,
+          minWidth: size === "sm" ? 28 : size === "lg" ? 44 : 32,
+          minHeight: size === "sm" ? 28 : size === "lg" ? 44 : 32,
+        }}
       >
         <svg
           viewBox="0 0 28 28"
+          width={size === "sm" ? 20 : size === "lg" ? 30 : 22}
+          height={size === "sm" ? 20 : size === "lg" ? 30 : 22}
           fill="none"
           xmlns="http://www.w3.org/2000/svg"
           className="h-[70%] w-[70%]"
+          style={{
+            maxWidth: "100%",
+            maxHeight: "100%",
+            display: "block",
+          }}
         >
           {/* Left Book Page */}
           <path

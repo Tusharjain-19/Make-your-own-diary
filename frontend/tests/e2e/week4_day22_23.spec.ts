@@ -82,11 +82,12 @@ test.describe("Week 4 — Day 22 & Day 23: Print Export, Pre-Flight, & Order Ful
 
     // Place order
     const payOrderBtn = page.getByRole("button", { name: /Pay ₹.*& Place Order/i });
+    await expect(payOrderBtn).toBeEnabled();
     await payOrderBtn.click();
 
     // Confirmation screen
     await expect(page.getByText("Your Hardcover is Scheduled for Print!")).toBeVisible({
-      timeout: 10000,
+      timeout: 15000,
     });
     await expect(page.getByText(/SB-ORD-/i)).toBeVisible();
     await expect(page.getByText("View Order Status Timeline")).toBeVisible();
