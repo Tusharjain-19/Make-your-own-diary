@@ -1,3 +1,5 @@
+export type GlyphCategory = "capital" | "small" | "number" | "symbol";
+
 export interface ProcessedGlyph {
   char: string;
   label: string;
@@ -11,6 +13,12 @@ export interface ProcessedGlyph {
   height: number;
   baselineOffset: number; // offset in px from baseline
   isManualDrawing?: boolean;
+  category?: GlyphCategory;
+  pairedChar?: string;
+  isAscender?: boolean;
+  isDescender?: boolean;
+  isSmallXHeight?: boolean;
+  isSynthesized?: boolean;
 }
 
 export interface HandwritingFontMetadata {

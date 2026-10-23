@@ -76,7 +76,7 @@ export function HandwritingPanel() {
     if (!fontName.trim()) return;
     try {
       setIsBuildingFont(true);
-      const { dataUrl } = await buildOpenTypeFont(
+      const { dataUrl, synthesizedCount } = await buildOpenTypeFont(
         fontName.trim(),
         processedGlyphs,
         user?.id || "user-tushar-01"
@@ -89,7 +89,7 @@ export function HandwritingPanel() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             name: fontName.trim(),
-            glyphCount: processedGlyphs.filter((g) => g.status !== "empty").length,
+            glyphCount: processedGlyphs.filter((g) => g.status !== "empty").length + synthesizedCount,
             userId: user?.id || "user-tushar-01",
           }),
         });
@@ -104,7 +104,7 @@ export function HandwritingPanel() {
         userId: user?.id || "user-tushar-01",
         name: fontName.trim(),
         createdAt: new Date().toISOString(),
-        glyphCount: processedGlyphs.filter((g) => g.status !== "empty").length,
+        glyphCount: processedGlyphs.filter((g) => g.status !== "empty").length + synthesizedCount,
         dataUrl,
         status: "ready",
       };
@@ -112,7 +112,7 @@ export function HandwritingPanel() {
       setStep("preview");
     } catch (err) {
       console.error("Error compiling font:", err);
-      alert("Error compiling font. Please check that at least 5 glyphs are filled.");
+      alert("Error compiling font. Please check that at least 3 glyphs are filled.");
     } finally {
       setIsBuildingFont(false);
     }
@@ -237,19 +237,19 @@ export function HandwritingPanel() {
                 <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-accent text-white text-[9px] font-bold">
                   1
                 </span>
-                <span>Download & print our calibrated A4 glyph sheet.</span>
+                <span>Download & print our calibrated A4 sheet (covers A–Z Capitals & a–z Small Letters).</span>
               </div>
               <div className="flex items-start gap-2">
                 <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-accent text-white text-[9px] font-bold">
                   2
                 </span>
-                <span>Fill in characters with a dark ink pen.</span>
+                <span>Fill in characters with a dark ink pen (x-height & baseline guides provided).</span>
               </div>
               <div className="flex items-start gap-2">
                 <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-accent text-white text-[9px] font-bold">
                   3
                 </span>
-                <span>Upload a phone photo to compile your personal OTF font.</span>
+                <span>Upload a photo. Our system automatically pairs and balances both Capital & Small letters.</span>
               </div>
             </div>
 

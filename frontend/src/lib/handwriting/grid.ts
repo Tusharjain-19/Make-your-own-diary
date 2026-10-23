@@ -1,6 +1,9 @@
+import { GlyphCategory } from "./types";
+
 /**
  * Storybound Handwriting Template Grid Specifications
  * Defines standard A4 dimensions, fiducial corner markers, and glyph grid cell coordinates
+ * Fully structured for both Capital Letters (A-Z) and Small Letters (a-z) with typographic metrics
  */
 
 export interface GlyphSpec {
@@ -9,6 +12,11 @@ export interface GlyphSpec {
   row: number;
   col: number;
   baselineOffsetPercent: number; // e.g. 72% from top of cell
+  category: GlyphCategory;
+  pairedChar?: string;
+  isAscender: boolean;
+  isDescender: boolean;
+  isSmallXHeight: boolean;
 }
 
 export interface GridDimensions {
@@ -47,21 +55,59 @@ export const TEMPLATE_CONFIG: GridDimensions = {
   },
 };
 
-// 76 canonical glyphs: A-Z, a-z, 0-9, and punctuation (. , ! ? ' " - : ; ( ) & @ ₹)
+// Character Case & Category Helpers
+export function isCapitalLetter(char: string): boolean {
+  return char.length === 1 && char >= "A" && char <= "Z";
+}
+
+export function isSmallLetter(char: string): boolean {
+  return char.length === 1 && char >= "a" && char <= "z";
+}
+
+export function isNumber(char: string): boolean {
+  return char.length === 1 && char >= "0" && char <= "9";
+}
+
+export function isAscender(char: string): boolean {
+  return ["b", "d", "f", "h", "k", "l", "t"].includes(char);
+}
+
+export function isDescender(char: string): boolean {
+  return ["g", "j", "p", "q", "y"].includes(char);
+}
+
+export function isSmallXHeight(char: string): boolean {
+  return isSmallLetter(char) && !isAscender(char) && !isDescender(char);
+}
+
+export function getPairedChar(char: string): string | undefined {
+  if (isCapitalLetter(char)) return char.toLowerCase();
+  if (isSmallLetter(char)) return char.toUpperCase();
+  return undefined;
+}
+
+export function getGlyphCategory(char: string): GlyphCategory {
+  if (isCapitalLetter(char)) return "capital";
+  if (isSmallLetter(char)) return "small";
+  if (isNumber(char)) return "number";
+  return "symbol";
+}
+
+// 76 canonical glyphs: A-Z (26), a-z (26), 0-9 (10), and punctuation (14)
 export const GLYPH_CHARS: string[] = [
-  // Row 0: A - H
+  // Row 0: A - H (Capitals)
   "A", "B", "C", "D", "E", "F", "G", "H",
-  // Row 1: I - P
+  // Row 1: I - P (Capitals)
   "I", "J", "K", "L", "M", "N", "O", "P",
-  // Row 2: Q - X
+  // Row 2: Q - X (Capitals)
   "Q", "R", "S", "T", "U", "V", "W", "X",
-  // Row 3: Y - Z, a - f
+  // Row 3: Y - Z (Capitals), a - f (Small letters)
   "Y", "Z", "a", "b", "c", "d", "e", "f",
-  // Row 4: g - n
+  // Row 4: g - n (Small letters)
   "g", "h", "i", "j", "k", "l", "m", "n",
-  // Row 5: o - v
+  // Row 5: o - v (Small letters)
   "o", "p", "q", "r", "s", "t", "u", "v",
-  // Row 6: w - z, 0 - 3
+  // Row 6: w - z (Small letters), 0 - 3 (Numbers)
   "w", "x", "y", "z", "0", "1", "2", "3",
   // Row 7: 4 - 9, . ,
   "4", "5", "6", "7", "8", "9", ".", ",",
@@ -75,9 +121,15 @@ export const GLYPH_SPECS: GlyphSpec[] = GLYPH_CHARS.map((char, index) => {
   const row = Math.floor(index / TEMPLATE_CONFIG.cols);
   const col = index % TEMPLATE_CONFIG.cols;
 
-  // Descenders like g, j, p, q, y have higher baseline guide
-  const isDescender = ["g", "j", "p", "q", "y"].includes(char);
-  const baselineOffsetPercent = isDescender ? 58 : 72;
+  const desc = isDescender(char);
+  const asc = isAscender(char);
+  const smallX = isSmallXHeight(char);
+  const category = getGlyphCategory(char);
+  const paired = getPairedChar(char);
+
+  // Descenders like g, j, p, q, y have higher baseline guide (58% from top)
+  // Regular baseline is 72% from top of cell
+  const baselineOffsetPercent = desc ? 58 : 72;
 
   return {
     char,
@@ -85,6 +137,11 @@ export const GLYPH_SPECS: GlyphSpec[] = GLYPH_CHARS.map((char, index) => {
     row,
     col,
     baselineOffsetPercent,
+    category,
+    pairedChar: paired,
+    isAscender: asc,
+    isDescender: desc,
+    isSmallXHeight: smallX,
   };
 });
 
@@ -99,6 +156,6 @@ export function getCellBoundsMm(row: number, col: number) {
     y,
     width: TEMPLATE_CONFIG.cellWidthMm,
     height: TEMPLATE_CONFIG.cellHeightMm,
-    baselineY: y + (TEMPLATE_CONFIG.cellHeightMm * 0.72),
+    baselineY: y + TEMPLATE_CONFIG.cellHeightMm * 0.72,
   };
 }

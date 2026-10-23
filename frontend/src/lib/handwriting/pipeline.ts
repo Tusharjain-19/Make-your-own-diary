@@ -186,6 +186,11 @@ function extractAndCleanGlyph(
     width: cropW,
     height: cropH,
     baselineOffset: baselineY - (cropY + cropH),
+    category: spec.category,
+    pairedChar: spec.pairedChar,
+    isAscender: spec.isAscender,
+    isDescender: spec.isDescender,
+    isSmallXHeight: spec.isSmallXHeight,
   };
 }
 
@@ -205,6 +210,11 @@ function createEmptyGlyph(spec: GlyphSpec): ProcessedGlyph {
     width: 40,
     height: 40,
     baselineOffset: 0,
+    category: spec.category,
+    pairedChar: spec.pairedChar,
+    isAscender: spec.isAscender,
+    isDescender: spec.isDescender,
+    isSmallXHeight: spec.isSmallXHeight,
   };
 }
 

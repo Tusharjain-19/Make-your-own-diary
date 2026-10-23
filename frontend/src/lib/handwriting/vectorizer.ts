@@ -6,7 +6,8 @@ import { ProcessedGlyph } from "./types";
  */
 export async function vectorizeGlyph(
   glyph: ProcessedGlyph,
-  unitsPerEm = 1000
+  unitsPerEm = 1000,
+  scaleMultiplier = 1.0
 ): Promise<opentype.Path> {
   const path = new opentype.Path();
 
@@ -26,16 +27,33 @@ export async function vectorizeGlyph(
   const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
   const data = imgData.data;
 
-  // Compute scale to fit unitsPerEm (1000)
-  // Standard cap height ~ 700 units, baseline at y = 0
-  const maxDim = Math.max(canvas.width, canvas.height);
-  const scale = (unitsPerEm * 0.7) / (maxDim || 1);
+  // Typographic scale targets for OpenType 1000 UPM:
+  // - Capitals (A-Z) & Numbers: ~700 units (Cap-Height)
+  // - Small Ascenders (b, d, f, h, k, l, t): ~680 units
+  // - Small Descenders (g, j, p, q, y): ~680 units (with descender dipping below baseline)
+  // - Small X-Height (a, c, e, m, n, o, r, s, u, v, w, x, z): ~480 units (x-height)
+  // - Small punctuation (., -): ~220 units
+  let targetHeight = unitsPerEm * 0.70;
+  if (glyph.isSmallXHeight) {
+    targetHeight = unitsPerEm * 0.48;
+  } else if (glyph.isAscender) {
+    targetHeight = unitsPerEm * 0.68;
+  } else if (glyph.isDescender) {
+    targetHeight = unitsPerEm * 0.68;
+  } else if (glyph.category === "symbol" && [".", ",", "-", "'", '"'].includes(glyph.char)) {
+    targetHeight = unitsPerEm * 0.22;
+  }
 
-  // In OpenType coordinate system:
-  // y = 0 is the baseline, positive y goes UP, negative y goes DOWN (descenders).
-  // In canvas coordinate system:
-  // y = 0 is top, positive y goes DOWN.
-  const baselineInCanvas = canvas.height - Math.max(0, glyph.baselineOffset);
+  const scale = (targetHeight / (canvas.height || 1)) * scaleMultiplier;
+
+  // Baseline positioning:
+  // Descenders dip below baseline into negative Y; other letters sit on baseline
+  let baselineInCanvas = canvas.height;
+  if (glyph.isDescender) {
+    baselineInCanvas = canvas.height * 0.68;
+  } else if (glyph.char === "-" || glyph.char === "—") {
+    baselineInCanvas = canvas.height * 0.5;
+  }
 
   // Marching squares / horizontal span decomposition
   // We decompose horizontal runs of black pixels into vector polygons
