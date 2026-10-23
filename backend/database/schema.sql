@@ -112,6 +112,38 @@ create table if not exists public.pdf_entitlements (
   primary key (book_id, user_id)
 );
 
+-- 10. Print Products Specification & Quotes Table (Day 22 / Day 23 / backend.md)
+create table if not exists public.print_products (
+  id text primary key,                           -- 'mini' | 'travel_diary' | 'classic'
+  name text not null,
+  description text,
+  size text not null,                            -- 'A5' | 'A4' | 'Square'
+  paper_weight_gsm int not null default 130,     -- e.g. 130gsm Munken Pure / 170gsm Silk
+  cover_type text not null default 'hardcover',  -- hardcover with 2mm Dutch board
+  bulk_factor float not null default 1.25,       -- paper bulk factor
+  paper_caliper_mm float not null default 0.14,  -- thickness per leaf (2 pages) in mm
+  hinge_gap_mm float not null default 8.0,       -- hinge wrap gap in mm
+  wrap_bleed_mm float not null default 20.0,     -- board wrap bleed for hardcover wrap (20mm)
+  interior_bleed_mm float not null default 3.0,  -- 3mm page bleed
+  safe_margin_mm float not null default 7.0,     -- safe area margin inside trim
+  min_pages int not null default 10,
+  max_pages int not null default 80,
+  base_price_paise int not null,                 -- price in paise (e.g. ₹699, ₹999, ₹1499)
+  extra_page_price_paise int not null default 2000, -- per additional 2 pages
+  active boolean default true
+);
+
+-- Seed Default Print Products
+insert into public.print_products (id, name, description, size, paper_weight_gsm, cover_type, bulk_factor, paper_caliper_mm, hinge_gap_mm, wrap_bleed_mm, interior_bleed_mm, safe_margin_mm, min_pages, max_pages, base_price_paise, extra_page_price_paise, active)
+values
+  ('mini', 'Mini Keepsake', '148 x 148 mm Square Hardcover, 130gsm Munken Pure natural cream paper, matte finish.', 'Square', 130, 'hardcover', 1.25, 0.12, 7.0, 20.0, 3.0, 6.0, 10, 60, 69900, 1500, true),
+  ('travel_diary', 'Travel Diary', 'A5 (148 x 210 mm) Hardcover with Silk Bookmark Ribbon, 170gsm archival art paper.', 'A5', 170, 'hardcover', 1.30, 0.15, 8.0, 20.0, 3.0, 7.0, 10, 80, 99900, 2000, true),
+  ('classic', 'Classic Heritage Album', 'A4 (210 x 297 mm) Deluxe Casebound Hardcover, 200gsm textured layflat paper.', 'A4', 200, 'hardcover', 1.35, 0.18, 9.0, 22.0, 3.0, 8.0, 10, 100, 149900, 2500, true)
+on conflict (id) do update set
+  name = excluded.name,
+  description = excluded.description,
+  base_price_paise = excluded.base_price_paise;
+
 -- Trigger to auto-create profile on auth signup
 create or replace function public.handle_new_user()
 returns trigger as $$
@@ -138,6 +170,7 @@ alter table public.exports enable row level security;
 alter table public.payments enable row level security;
 alter table public.orders enable row level security;
 alter table public.pdf_entitlements enable row level security;
+alter table public.print_products enable row level security;
 
 -- RLS Policies
 create policy "Users can view and update own profile"
@@ -178,6 +211,20 @@ create policy "Users can view own orders"
   on public.orders for select
   using (auth.uid() = user_id);
 
+create policy "Admins can view and manage all orders"
+  on public.orders for all
+  using (
+    exists (
+      select 1 from public.profiles
+      where profiles.id = auth.uid()
+      and profiles.is_admin = true
+    )
+  );
+
 create policy "Users can view own entitlements"
   on public.pdf_entitlements for select
   using (auth.uid() = user_id);
+
+create policy "Anyone can view active print products"
+  on public.print_products for select
+  using (active = true);

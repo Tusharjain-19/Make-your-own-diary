@@ -10,7 +10,7 @@ import { PageSize, El, PageData } from "@/lib/editor/types";
 import { BookPageRenderer } from "@/components/preview/BookPageRenderer";
 import { pageTurnAudio } from "@/lib/audio/page-turn-sound";
 import { SvgClose, SvgArrowRight } from "@/components/ui/website-icons";
-import { Volume2, VolumeX, BookOpen, ArrowLeft } from "lucide-react";
+import { Volume2, VolumeX, BookOpen, ArrowLeft, Package } from "lucide-react";
 
 export default function BookPreviewPage() {
   const params = useParams();
@@ -260,8 +260,16 @@ export default function BookPreviewPage() {
         {/* Right Actions */}
         <div className="flex items-center space-x-2 sm:space-x-3">
           <button
+            onClick={() => router.push(`/books/${bookId}/order`)}
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-[#9e3d48] hover:bg-[#832d36] text-white text-xs font-semibold shadow-xs transition-all active:scale-95"
+          >
+            <Package className="w-3.5 h-3.5" />
+            <span>Order Hardcover Print</span>
+          </button>
+
+          <button
             onClick={() => router.push(`/books/${bookId}/checkout`)}
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-[#000000] hover:bg-[#2f3130] text-white text-xs font-semibold shadow-xs transition-all active:scale-95"
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-[#000000] hover:bg-[#2f3130] text-white text-xs font-semibold shadow-xs transition-all active:scale-95"
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />

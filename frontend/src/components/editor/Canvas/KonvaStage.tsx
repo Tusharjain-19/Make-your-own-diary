@@ -132,6 +132,21 @@ export default function KonvaStage() {
   const pageHeightPx = mmToPx(dim.heightMm);
   const marginPx = mmToPx(dim.safeMarginMm);
 
+  const safeMarginViolations = React.useMemo(() => {
+    const elements = activePage.elements || [];
+    return elements.filter((el) => {
+      if (el.type !== "text") return false;
+      const right = el.x + el.w;
+      const bottom = el.y + el.h;
+      return (
+        el.x < dim.safeMarginMm ||
+        el.y < dim.safeMarginMm ||
+        right > dim.widthMm - dim.safeMarginMm ||
+        bottom > dim.heightMm - dim.safeMarginMm
+      );
+    });
+  }, [activePage.elements, dim.safeMarginMm, dim.widthMm, dim.heightMm]);
+
   // Auto-center layer in available canvas stage
   const originX = Math.round((stageSize.width - pageWidthPx * zoom) / 2);
   const originY = Math.round(Math.max(30, (stageSize.height - pageHeightPx * zoom) / 2));
@@ -781,6 +796,39 @@ export default function KonvaStage() {
             </>
           )}
 
+          {/* INNER SAFE MARGIN GUIDE (Cyan / Amber Dashed Box) */}
+          {showMargins && (
+            <>
+              <Rect
+                x={marginPx}
+                y={marginPx}
+                width={pageWidthPx - 2 * marginPx}
+                height={pageHeightPx - 2 * marginPx}
+                stroke="#0284C7"
+                strokeWidth={1.2 / zoom}
+                dash={[5 / zoom, 5 / zoom]}
+                opacity={0.7}
+                listening={false}
+              />
+            </>
+          )}
+
+          {/* SAFE MARGIN VIOLATION OUTLINES (Amber Highlights on Unsafe Text) */}
+          {safeMarginViolations.map((vEl) => (
+            <Rect
+              key={`safe-warn-${vEl.id}`}
+              x={mmToPx(vEl.x)}
+              y={mmToPx(vEl.y)}
+              width={mmToPx(vEl.w)}
+              height={mmToPx(vEl.h)}
+              stroke="#F59E0B"
+              strokeWidth={1.8 / zoom}
+              dash={[3 / zoom, 3 / zoom]}
+              opacity={0.9}
+              listening={false}
+            />
+          ))}
+
           {/* Konva Transformer Selection Box */}
           <Transformer
             ref={transformerRef}
@@ -964,6 +1012,16 @@ export default function KonvaStage() {
           </svg>
           <span>Recenter Page</span>
         </button>
+      )}
+
+      {/* Safe Margin Warning Badge */}
+      {safeMarginViolations.length > 0 && (
+        <div className="absolute top-4 left-1/2 -translate-x-1/2 z-40 flex items-center gap-2 rounded-full border border-amber-300 bg-amber-50/95 px-3 py-1.5 text-xs text-amber-900 shadow-md backdrop-blur-sm dark:border-amber-800 dark:bg-amber-950/90 dark:text-amber-200 animate-in fade-in-50">
+          <span className="flex h-2 w-2 rounded-full bg-amber-500 animate-pulse" />
+          <span className="font-medium text-[11px]">
+            ⚠️ Safe Area Warning: {safeMarginViolations.length} text box{safeMarginViolations.length > 1 ? "es" : ""} outside {dim.safeMarginMm}mm safe area
+          </span>
+        </div>
       )}
 
       {/* Subtle Vertical Canvas Scroll Track Indicator */}

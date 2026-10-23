@@ -1,8 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import crypto from "crypto";
-import { PAYMENTS_DB } from "../create/route";
-import { ENTITLEMENTS_DB } from "../verify/route";
+import { PAYMENTS_DB, ENTITLEMENTS_DB } from "@/lib/payments/db";
 
 export async function POST(request: NextRequest) {
   try {

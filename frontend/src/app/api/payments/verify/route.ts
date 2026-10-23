@@ -1,18 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import crypto from "crypto";
-import { PAYMENTS_DB } from "../create/route";
-
-export const ENTITLEMENTS_DB: Record<
-  string,
-  {
-    bookId: string;
-    userId: string;
-    paidAt: string;
-    freeReexportUntil: string;
-    paymentId: string;
-  }
-> = {};
+import { PAYMENTS_DB, ENTITLEMENTS_DB } from "@/lib/payments/db";
 
 export async function POST(request: NextRequest) {
   try {

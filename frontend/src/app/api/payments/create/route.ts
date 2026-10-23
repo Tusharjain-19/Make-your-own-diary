@@ -1,19 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-// Idempotent payments in-memory table
-export const PAYMENTS_DB: Record<
-  string,
-  {
-    id: string;
-    bookId: string;
-    userId: string;
-    amountPaise: number;
-    currency: string;
-    status: "created" | "paid" | "failed";
-    createdAt: string;
-  }
-> = {};
+import { PAYMENTS_DB } from "@/lib/payments/db";
 
 export async function POST(request: NextRequest) {
   try {

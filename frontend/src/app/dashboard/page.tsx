@@ -14,6 +14,7 @@ import {
   UserCheck,
   ArrowRight,
   BookOpen,
+  Package,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -164,12 +165,21 @@ export default function DashboardPage() {
             </p>
           </div>
 
-          <Link href="/books/new">
-            <Button className="h-10 px-5 text-sm">
-              <Plus className="mr-1.5 h-4 w-4" />
-              New Book
-            </Button>
-          </Link>
+          <div className="flex items-center gap-2.5">
+            <Link href="/orders">
+              <Button variant="outline" className="h-10 text-xs gap-1.5 border-border">
+                <Package className="h-4 w-4 text-accent" />
+                Print Orders
+              </Button>
+            </Link>
+
+            <Link href="/books/new">
+              <Button className="h-10 px-5 text-sm">
+                <Plus className="mr-1.5 h-4 w-4" />
+                New Book
+              </Button>
+            </Link>
+          </div>
         </div>
 
         {/* Books Grid */}
