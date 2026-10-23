@@ -8,6 +8,9 @@ import { FontPicker } from "./FontPicker";
 import { ColorPicker } from "./ColorPicker";
 import { themes } from "@/lib/themes";
 import { useToast } from "@/components/ui/toast";
+import { RefreshCw, UploadCloud, Image as ImageIcon } from "lucide-react";
+import { processUploadedImage } from "@/lib/editor/images";
+import { saveAssetToIndexedDB } from "@/lib/storage/indexeddb";
 import {
   SvgTransparency,
   SvgPaintRoller,
@@ -64,6 +67,7 @@ export function ContextToolbar() {
     clearPageContent,
     removeLayout,
     saveToStorage,
+    setActivePanel,
   } = useEditorStore();
 
   const { showToast } = useToast();
@@ -705,6 +709,56 @@ export function ContextToolbar() {
             >
               Polaroid
             </Button>
+
+            <div className="h-4 w-px bg-border mx-0.5" />
+
+            {/* Replace / Change Photo from Uploads */}
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-8 text-xs gap-1.5 border-accent/40 hover:border-accent text-accent hover:bg-accent-soft font-medium shadow-2xs"
+              onClick={() => {
+                setActivePanel("uploads");
+                showToast("info", "Click any photo in Uploads below to replace this image");
+              }}
+              title="Replace this image from Uploads library"
+            >
+              <RefreshCw className="h-3.5 w-3.5" />
+              <span>Change Photo</span>
+            </Button>
+
+            {/* Quick Upload from Device */}
+            <label
+              className="inline-flex items-center gap-1.5 h-8 px-2.5 rounded-[6px] border border-border bg-surface hover:bg-accent-soft text-text text-xs cursor-pointer transition-colors shadow-2xs font-medium"
+              title="Upload from computer to replace this image"
+            >
+              <UploadCloud className="h-3.5 w-3.5 text-text-muted" />
+              <span>Upload New</span>
+              <input
+                type="file"
+                accept="image/jpeg,image/png,image/webp,image/heic"
+                className="hidden"
+                onChange={async (e) => {
+                  const file = e.target.files?.[0];
+                  if (!file) return;
+                  try {
+                    const asset = await processUploadedImage(file);
+                    await saveAssetToIndexedDB(asset);
+                    updateElement(primarySelected.id, {
+                      src: asset.dataUrl,
+                      originalWidth: asset.width,
+                      originalHeight: asset.height,
+                      assetId: asset.id,
+                    });
+                    showToast("success", "Photo replaced successfully!");
+                  } catch (err) {
+                    console.error("Replace photo error:", err);
+                    showToast("error", "Failed to process image file");
+                  }
+                  e.target.value = "";
+                }}
+              />
+            </label>
           </div>
         )}
 

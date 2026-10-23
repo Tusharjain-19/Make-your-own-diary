@@ -20,11 +20,15 @@ import {
   Palette,
   Check,
   RotateCw,
+  RefreshCw,
+  UploadCloud,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useEditorStore } from "@/lib/editor/store";
 import { TextEl, ImageEl, ShapeEl, IconEl } from "@/lib/editor/types";
 import { calculateDpi, isLowResolution } from "@/lib/editor/images";
+import { processUploadedImage } from "@/lib/editor/images";
+import { saveAssetToIndexedDB } from "@/lib/storage/indexeddb";
 import { FontPicker } from "../FontPicker";
 import { ColorPicker } from "../ColorPicker";
 import { themes } from "@/lib/themes";
@@ -44,6 +48,7 @@ export function PropertiesPanel() {
     sendToBack,
     toggleLockSelected,
     saveToStorage,
+    setActivePanel,
   } = useEditorStore();
 
   const { showToast } = useToast();
@@ -486,6 +491,54 @@ export function PropertiesPanel() {
                 >
                   Polaroid
                 </button>
+              </div>
+            </div>
+
+            {/* Replace / Swap Photo Action */}
+            <div className="space-y-1.5 pt-1">
+              <label className="text-[11px] font-medium text-text">Photo Source</label>
+              <div className="grid grid-cols-2 gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setActivePanel("uploads");
+                    showToast("info", "Click any photo in Uploads to replace this image");
+                  }}
+                  className="w-full text-xs gap-1.5 h-8 border-accent/40 hover:border-accent text-accent hover:bg-accent-soft"
+                >
+                  <RefreshCw className="h-3 w-3" />
+                  <span>From Uploads</span>
+                </Button>
+
+                <label className="inline-flex items-center justify-center gap-1.5 h-8 px-2 rounded-lg border border-border bg-surface hover:bg-accent-soft text-text text-xs cursor-pointer transition-colors shadow-2xs font-medium">
+                  <UploadCloud className="h-3 w-3 text-text-muted" />
+                  <span>Upload File</span>
+                  <input
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp,image/heic"
+                    className="hidden"
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      try {
+                        const asset = await processUploadedImage(file);
+                        await saveAssetToIndexedDB(asset);
+                        updateElement(primarySelected.id, {
+                          src: asset.dataUrl,
+                          originalWidth: asset.width,
+                          originalHeight: asset.height,
+                          assetId: asset.id,
+                        });
+                        showToast("success", "Photo replaced successfully!");
+                      } catch (err) {
+                        console.error(err);
+                        showToast("error", "Failed to process image file");
+                      }
+                      e.target.value = "";
+                    }}
+                  />
+                </label>
               </div>
             </div>
 

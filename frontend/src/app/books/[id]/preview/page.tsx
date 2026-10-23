@@ -10,7 +10,19 @@ import { PageSize, El, PageData } from "@/lib/editor/types";
 import { BookPageRenderer } from "@/components/preview/BookPageRenderer";
 import { pageTurnAudio } from "@/lib/audio/page-turn-sound";
 import { SvgClose, SvgArrowRight } from "@/components/ui/website-icons";
-import { Volume2, VolumeX, BookOpen, ArrowLeft, Package } from "lucide-react";
+import {
+  Volume2,
+  VolumeX,
+  BookOpen,
+  ArrowLeft,
+  Package,
+  ChevronLeft,
+  ChevronRight,
+  ChevronUp,
+  ChevronDown,
+  Eye,
+  EyeOff,
+} from "lucide-react";
 
 export default function BookPreviewPage() {
   const params = useParams();
@@ -26,6 +38,7 @@ export default function BookPreviewPage() {
   const [showWatermark, setShowWatermark] = React.useState(true);
   const [bannerDismissed, setBannerDismissed] = React.useState(false);
   const [soundEnabled, setSoundEnabled] = React.useState(true);
+  const [showThumbnails, setShowThumbnails] = React.useState(true);
 
   // 3D Leaf Turn Animation State
   const [isFlipping, setIsFlipping] = React.useState(false);
@@ -37,8 +50,16 @@ export default function BookPreviewPage() {
       const rawBook = getBookById(bookId);
       const rawPages = getBookPages(bookId);
 
-      if (rawBook && rawPages && rawPages.length > 0) {
-        const fullPages: PageData[] = rawPages.map((rp, idx) => {
+      if (rawBook) {
+        let pageSources = rawPages && rawPages.length > 0 ? rawPages : [
+          { id: `p-${rawBook.id}-1`, bookId: rawBook.id, position: 1, data: { bg: "#FAF8F5", layoutId: "L01", elements: [] } },
+          { id: `p-${rawBook.id}-2`, bookId: rawBook.id, position: 2, data: { bg: "#FAF8F5", layoutId: "L02", elements: [] } },
+          { id: `p-${rawBook.id}-3`, bookId: rawBook.id, position: 3, data: { bg: "#FAF8F5", layoutId: "L03", elements: [] } },
+          { id: `p-${rawBook.id}-4`, bookId: rawBook.id, position: 4, data: { bg: "#FAF8F5", layoutId: "L04", elements: [] } },
+          { id: `p-${rawBook.id}-5`, bookId: rawBook.id, position: 5, data: { bg: "#FAF8F5", layoutId: "L05", elements: [] } },
+        ];
+
+        const fullPages: PageData[] = pageSources.map((rp, idx) => {
           let elements: El[] = (rp.data?.elements || []) as El[];
           if (
             idx === 0 &&
@@ -99,8 +120,8 @@ export default function BookPreviewPage() {
   const title = book?.title || "Jaipur: A City of Royal Memories";
   const author = book?.author || "Tushar";
   const pages = book?.pages || [];
-  const totalPages = Math.max(20, pages.length);
-  const totalSpreads = Math.ceil((totalPages - 1) / 2); // Exclude cover
+  const totalPages = pages.length > 0 ? pages.length : 1;
+  const totalSpreads = Math.max(1, Math.ceil((totalPages - 1) / 2)); // Exclude cover
 
   // Keyboard navigation
   React.useEffect(() => {
@@ -480,8 +501,107 @@ export default function BookPreviewPage() {
               </div>
             </div>
           )}
+          {/* Floating Left Arrow Button */}
+          <button
+            onClick={handlePrev}
+            disabled={viewMode === "cover" || isFlipping}
+            aria-label="Previous Page"
+            className="absolute left-2 sm:left-6 top-1/2 -translate-y-1/2 z-40 p-2.5 sm:p-3 rounded-full bg-white/90 hover:bg-white text-[#1a1c1b] shadow-xl border border-[#e2e3e1] backdrop-blur transition-all hover:scale-105 active:scale-95 disabled:opacity-0 disabled:pointer-events-none"
+            title="Previous Page (Left Arrow Key)"
+          >
+            <ChevronLeft className="w-5 h-5" />
+          </button>
+
+          {/* Floating Right Arrow Button */}
+          <button
+            onClick={handleNext}
+            disabled={(viewMode === "spread" && currentSpreadIndex >= totalSpreads) || isFlipping}
+            aria-label="Next Page"
+            className="absolute right-2 sm:right-6 top-1/2 -translate-y-1/2 z-40 p-2.5 sm:p-3 rounded-full bg-white/90 hover:bg-white text-[#1a1c1b] shadow-xl border border-[#e2e3e1] backdrop-blur transition-all hover:scale-105 active:scale-95 disabled:opacity-0 disabled:pointer-events-none"
+            title="Next Page (Right Arrow Key)"
+          >
+            <ChevronRight className="w-5 h-5" />
+          </button>
         </div>
       </main>
+
+      {/* Bottom Page Thumbnails Carousel (Collapsible / Toggleable) */}
+      {showThumbnails && (
+        <aside className="fixed bottom-20 left-1/2 -translate-x-1/2 z-40 w-auto max-w-[94vw] bg-white/95 border border-[#e2e3e1] rounded-2xl px-4 py-2.5 shadow-2xl backdrop-blur-md flex items-center gap-3 animate-in fade-in slide-in-from-bottom-2 duration-150">
+          <div className="flex flex-col items-start pr-2 border-r border-[#e2e3e1] shrink-0 text-xs">
+            <span className="font-serif font-semibold text-[#1a1c1b]">Pages</span>
+            <span className="font-mono text-[10px] text-[#747878]">{totalPages} total</span>
+          </div>
+
+          <div className="flex items-center gap-2 overflow-x-auto max-w-[70vw] py-0.5 scrollbar-thin">
+            {pages.map((p, idx) => {
+              const isCover = idx === 0;
+              const isSelected =
+                viewMode === "cover"
+                  ? isCover
+                  : idx === leftPageNum - 1 || idx === rightPageNum - 1;
+
+              return (
+                <button
+                  key={p.id || idx}
+                  type="button"
+                  onClick={() => {
+                    pageTurnAudio.play();
+                    if (isCover) {
+                      setViewMode("cover");
+                    } else {
+                      setViewMode("spread");
+                      setCurrentSpreadIndex(Math.ceil(idx / 2));
+                    }
+                  }}
+                  className={`group relative shrink-0 flex flex-col items-center rounded-lg border p-1 transition-all ${
+                    isSelected
+                      ? "border-[#9e3d48] bg-[#fbf5f6] ring-2 ring-[#9e3d48]/25 shadow-sm scale-105"
+                      : "border-[#e2e3e1] bg-white hover:border-[#1a1c1b]/40 hover:bg-[#faf8f5]"
+                  }`}
+                >
+                  <div
+                    className="w-10 h-14 rounded-xs border border-[#e2e3e1] overflow-hidden flex flex-col justify-between p-1 relative shadow-2xs"
+                    style={{ backgroundColor: p.bg || "#FAFAF8" }}
+                  >
+                    {isCover ? (
+                      <div className="h-full flex flex-col items-center justify-center text-center">
+                        <span className="font-serif text-[6px] font-bold text-[#1a1c1b] truncate w-full">
+                          {title}
+                        </span>
+                        <span className="font-mono text-[5px] bg-[#9e3d48] text-white px-1 rounded-xs mt-0.5">
+                          COVER
+                        </span>
+                      </div>
+                    ) : (
+                      <div className="flex flex-col gap-0.5 h-full">
+                        {p.elements.slice(0, 3).map((el, elIdx) => (
+                          <div
+                            key={el.id || elIdx}
+                            className="h-1 rounded-[1px]"
+                            style={{
+                              width: el.type === "image" ? "80%" : "60%",
+                              backgroundColor:
+                                el.type === "image" ? "#C29B38" : "rgba(26,26,26,0.2)",
+                            }}
+                          />
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  <span
+                    className={`font-mono text-[9px] mt-0.5 ${
+                      isSelected ? "font-bold text-[#9e3d48]" : "text-[#747878]"
+                    }`}
+                  >
+                    {isCover ? "Cover" : `p.${idx + 1}`}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </aside>
+      )}
 
       {/* Floating Bottom Navigation Controller (Warm Editorial Stationery Light Mode) */}
       <footer className="fixed bottom-5 left-1/2 -translate-x-1/2 z-40 w-auto max-w-[95vw]">
@@ -495,13 +615,15 @@ export default function BookPreviewPage() {
               className="p-1.5 hover:bg-[#f4f4f2] text-[#1a1c1b] rounded-full transition-colors disabled:opacity-30"
               title="Previous Page (Left Arrow)"
             >
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
-              </svg>
+              <ChevronLeft className="w-4 h-4" />
             </button>
 
             <span className="font-mono text-xs font-medium px-2 text-[#1a1c1b] whitespace-nowrap">
-              {viewMode === "cover" ? "Cover View" : `Pages ${leftPageNum}–${rightPageNum} of ${totalPages}`}
+              {viewMode === "cover"
+                ? `Cover (Page 1 of ${totalPages})`
+                : rightPageNum <= totalPages
+                ? `Pages ${leftPageNum}–${rightPageNum} of ${totalPages}`
+                : `Page ${leftPageNum} of ${totalPages}`}
             </span>
 
             <button
@@ -511,9 +633,7 @@ export default function BookPreviewPage() {
               className="p-1.5 hover:bg-[#f4f4f2] text-[#1a1c1b] rounded-full transition-colors disabled:opacity-30"
               title="Next Page (Right Arrow)"
             >
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
-              </svg>
+              <ChevronRight className="w-4 h-4" />
             </button>
           </div>
 
@@ -550,6 +670,16 @@ export default function BookPreviewPage() {
               Cover
             </button>
           </div>
+
+          {/* Toggle Bottom Preview Thumbnails ("Can see or not see") */}
+          <button
+            onClick={() => setShowThumbnails((prev) => !prev)}
+            className="flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-[#e2e3e1] bg-[#f4f4f2] hover:bg-white text-[#1a1c1b] text-xs font-mono transition-colors shadow-2xs"
+            title={showThumbnails ? "Hide Bottom Page Preview" : "Show Bottom Page Preview"}
+          >
+            {showThumbnails ? <EyeOff className="h-3.5 w-3.5 text-[#747878]" /> : <Eye className="h-3.5 w-3.5 text-[#6a5d43]" />}
+            <span className="hidden sm:inline">{showThumbnails ? "Hide Strip" : "Show Strip"}</span>
+          </button>
 
           {/* Sound Toggle */}
           <button

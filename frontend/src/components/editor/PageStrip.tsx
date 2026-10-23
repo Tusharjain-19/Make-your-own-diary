@@ -1,7 +1,18 @@
 "use client";
 
 import * as React from "react";
-import { Plus, Copy, Trash2, GripVertical } from "lucide-react";
+import {
+  Plus,
+  Copy,
+  Trash2,
+  GripVertical,
+  ChevronLeft,
+  ChevronRight,
+  ChevronUp,
+  ChevronDown,
+  Eye,
+  EyeOff,
+} from "lucide-react";
 import { useEditorStore } from "@/lib/editor/store";
 import { Button } from "@/components/ui/button";
 
@@ -18,6 +29,7 @@ export function PageStrip() {
 
   const [draggedIdx, setDraggedIdx] = React.useState<number | null>(null);
   const [dragOverIdx, setDragOverIdx] = React.useState<number | null>(null);
+  const [isCollapsed, setIsCollapsed] = React.useState(false);
 
   const pages = book?.pages || [];
   const isSquare = book?.size === "Square";
@@ -50,13 +62,88 @@ export function PageStrip() {
     setDragOverIdx(null);
   };
 
+  if (isCollapsed) {
+    return (
+      <footer className="h-9 shrink-0 border-t border-border bg-surface px-4 flex items-center justify-between z-30 select-none shadow-xs text-xs animate-in fade-in duration-100">
+        <div className="flex items-center gap-2">
+          <span className="font-serif font-semibold text-text">Pages</span>
+          <span className="font-mono text-[11px] text-text-muted">({pages.length})</span>
+          <div className="h-3.5 w-px bg-border mx-1" />
+          <button
+            type="button"
+            onClick={() => setActivePage(Math.max(0, activePageIndex - 1))}
+            disabled={activePageIndex === 0}
+            className="p-1 rounded hover:bg-accent-soft text-text-muted hover:text-text disabled:opacity-25 transition-colors"
+            title="Previous Page (ArrowLeft)"
+          >
+            <ChevronLeft className="h-3.5 w-3.5" />
+          </button>
+          <span className="font-mono text-[11px] font-medium text-text px-1">
+            {activePageIndex === 0 ? "Cover" : `Page ${activePageIndex + 1}`} of {pages.length}
+          </span>
+          <button
+            type="button"
+            onClick={() => setActivePage(Math.min(pages.length - 1, activePageIndex + 1))}
+            disabled={activePageIndex >= pages.length - 1}
+            className="p-1 rounded hover:bg-accent-soft text-text-muted hover:text-text disabled:opacity-25 transition-colors"
+            title="Next Page (ArrowRight)"
+          >
+            <ChevronRight className="h-3.5 w-3.5" />
+          </button>
+        </div>
+
+        <button
+          type="button"
+          onClick={() => setIsCollapsed(false)}
+          className="flex items-center gap-1.5 px-2.5 py-1 rounded-md border border-border bg-surface hover:bg-accent-soft text-text text-xs transition-colors shadow-2xs font-medium"
+          title="Show Page Thumbnails (Bottom Preview)"
+        >
+          <ChevronUp className="h-3.5 w-3.5 text-text-muted" />
+          <span>Show Bottom Preview</span>
+        </button>
+      </footer>
+    );
+  }
+
   return (
     <footer className="h-[110px] shrink-0 border-t border-border bg-surface px-4 py-2.5 flex items-center gap-3 z-30 select-none">
       <div className="flex flex-col items-start justify-center pr-2 border-r border-border shrink-0">
-        <span className="font-serif text-xs font-semibold text-text">Pages</span>
+        <div className="flex items-center justify-between w-full gap-2">
+          <span className="font-serif text-xs font-semibold text-text">Pages</span>
+          <button
+            type="button"
+            onClick={() => setIsCollapsed(true)}
+            className="p-0.5 rounded hover:bg-accent-soft text-text-muted hover:text-text transition-colors"
+            title="Hide Bottom Page Preview (Can see or not see)"
+          >
+            <ChevronDown className="h-3.5 w-3.5" />
+          </button>
+        </div>
         <span className="font-mono text-[10px] text-text-muted">
           {pages.length} total
         </span>
+
+        {/* Prev / Next Page Buttons */}
+        <div className="flex items-center gap-1 mt-1.5">
+          <button
+            type="button"
+            onClick={() => setActivePage(Math.max(0, activePageIndex - 1))}
+            disabled={activePageIndex === 0}
+            className="p-1 rounded border border-border hover:bg-accent-soft text-text-muted hover:text-text disabled:opacity-25 transition-colors shadow-2xs"
+            title="Previous Page (Left Arrow Key)"
+          >
+            <ChevronLeft className="h-3 w-3" />
+          </button>
+          <button
+            type="button"
+            onClick={() => setActivePage(Math.min(pages.length - 1, activePageIndex + 1))}
+            disabled={activePageIndex >= pages.length - 1}
+            className="p-1 rounded border border-border hover:bg-accent-soft text-text-muted hover:text-text disabled:opacity-25 transition-colors shadow-2xs"
+            title="Next Page (Right Arrow Key)"
+          >
+            <ChevronRight className="h-3 w-3" />
+          </button>
+        </div>
       </div>
 
       {/* Horizontally scrollable thumbnail list */}

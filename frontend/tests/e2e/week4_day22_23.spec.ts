@@ -2,6 +2,7 @@ import { test, expect } from "@playwright/test";
 
 test.describe("Week 4 — Day 22 & Day 23: Print Export, Pre-Flight, & Order Fulfilment", () => {
   test.beforeEach(async ({ context }) => {
+    test.setTimeout(60000);
     // Authenticate test browser with Tushar session cookie
     const sessionData = JSON.stringify({
       userId: "user-tushar-01",

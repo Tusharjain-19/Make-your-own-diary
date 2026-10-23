@@ -1,10 +1,11 @@
 "use client";
 
 import * as React from "react";
-import { UploadCloud, Image as ImageIcon, Trash2, Plus, Loader2, AlertCircle } from "lucide-react";
+import { UploadCloud, Image as ImageIcon, Trash2, Plus, Loader2, AlertCircle, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useEditorStore } from "@/lib/editor/store";
 import { ImageEl } from "@/lib/editor/types";
+import { useToast } from "@/components/ui/toast";
 import {
   saveAssetToIndexedDB,
   loadAssetsFromIndexedDB,
@@ -49,7 +50,16 @@ const SAMPLE_EDITORIAL_PHOTOS = [
 ];
 
 export function UploadsPanel() {
-  const { addElement } = useEditorStore();
+  const { addElement, book, activePageIndex, selectedIds, updateElement } = useEditorStore();
+  const { showToast } = useToast();
+
+  const activePage = book?.pages[activePageIndex];
+  const selectedElements = activePage?.elements.filter((e) => selectedIds.includes(e.id)) || [];
+  const selectedImage =
+    selectedElements.length === 1 && selectedElements[0].type === "image"
+      ? (selectedElements[0] as ImageEl)
+      : null;
+
   const [userAssets, setUserAssets] = React.useState<UploadedAsset[]>([]);
   const [isUploading, setIsUploading] = React.useState(false);
   const [isDragOver, setIsDragOver] = React.useState(false);
@@ -88,7 +98,7 @@ export function UploadsPanel() {
 
     if (newAssets.length > 0) {
       setUserAssets((prev) => [...newAssets, ...prev]);
-      // If single file uploaded, automatically place it onto active page
+      // If single file uploaded, automatically place or replace onto active page
       if (newAssets.length === 1) {
         handleInsertPhoto(newAssets[0].dataUrl, newAssets[0].width, newAssets[0].height, newAssets[0].id);
       }
@@ -102,8 +112,21 @@ export function UploadsPanel() {
     url: string,
     width: number,
     height: number,
-    assetId?: string
+    assetId?: string,
+    forceNew: boolean = false
   ) => {
+    // If an image is selected on canvas and not forced new, replace it
+    if (selectedImage && !forceNew) {
+      updateElement(selectedImage.id, {
+        src: url,
+        originalWidth: width,
+        originalHeight: height,
+        assetId,
+      });
+      showToast("success", "Photo replaced on canvas!");
+      return;
+    }
+
     // Determine reasonable aspect-ratio dimensions in mm (default max width 110mm)
     const aspect = width && height ? width / height : 1.5;
     const wMm = 110;
@@ -128,6 +151,7 @@ export function UploadsPanel() {
     };
 
     addElement(newImage);
+    showToast("success", "Photo added to page!");
   };
 
   const handleDeleteAsset = async (e: React.MouseEvent, id: string) => {
@@ -141,9 +165,28 @@ export function UploadsPanel() {
       <div>
         <h3 className="font-serif text-base font-medium text-text">Photo Uploads</h3>
         <p className="text-xs text-text-muted mt-0.5">
-          Drop photos to upload. Click or drag any photo to insert onto page.
+          {selectedImage
+            ? "Click any photo to replace the selected image on your canvas."
+            : "Drop photos to upload. Click or drag any photo to insert onto page."}
         </p>
       </div>
+
+      {/* Active Replacement Mode Indicator */}
+      {selectedImage && (
+        <div className="rounded-xl border border-accent/40 bg-accent-soft/50 p-3 text-xs space-y-1.5 shadow-2xs">
+          <div className="flex items-center justify-between">
+            <span className="flex items-center gap-1.5 font-semibold text-accent text-xs">
+              <RefreshCw className="h-3.5 w-3.5" /> Replace Active Photo
+            </span>
+            <span className="text-[10px] font-mono bg-accent text-white px-2 py-0.5 rounded-full font-medium">
+              Replace Target
+            </span>
+          </div>
+          <p className="text-[11px] text-text-muted leading-relaxed">
+            Click any photo below or upload a new one to immediately replace the selected image.
+          </p>
+        </div>
+      )}
 
       {/* Hidden file input */}
       <input
@@ -221,7 +264,14 @@ export function UploadsPanel() {
                   className="h-full w-full object-cover group-hover:scale-105 transition-transform"
                 />
                 <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-between p-1.5 text-white">
-                  <div className="flex justify-end">
+                  <div className="flex justify-between items-center">
+                    {selectedImage ? (
+                      <span className="text-[9px] font-mono bg-accent text-white px-1.5 py-0.5 rounded font-semibold">
+                        Swap Photo
+                      </span>
+                    ) : (
+                      <span />
+                    )}
                     <button
                       type="button"
                       onClick={(e) => handleDeleteAsset(e, asset.id)}
@@ -232,7 +282,7 @@ export function UploadsPanel() {
                     </button>
                   </div>
                   <div className="text-[9px] font-mono truncate text-center bg-black/50 py-0.5 rounded">
-                    {asset.width} × {asset.height}
+                    {selectedImage ? "Click to Replace" : `${asset.width} × ${asset.height}`}
                   </div>
                 </div>
               </div>
@@ -261,9 +311,16 @@ export function UploadsPanel() {
                 className="h-full w-full object-cover group-hover:scale-105 transition-transform"
               />
               <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-between p-1.5 text-white text-[10px]">
-                <span className="truncate font-serif font-medium">{photo.title}</span>
+                <div className="flex justify-between items-center w-full">
+                  <span className="truncate font-serif font-medium">{photo.title}</span>
+                  {selectedImage && (
+                    <span className="text-[8px] font-mono bg-accent text-white px-1 py-0.2 rounded shrink-0">
+                      Swap
+                    </span>
+                  )}
+                </div>
                 <span className="font-mono text-[9px] text-accent-soft">
-                  {photo.width} × {photo.height}
+                  {selectedImage ? "Click to Replace on Page" : `${photo.width} × ${photo.height}`}
                 </span>
               </div>
             </button>

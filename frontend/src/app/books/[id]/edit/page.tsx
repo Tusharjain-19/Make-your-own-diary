@@ -3,7 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth/auth-context";
 import { getThemeById } from "@/lib/themes";
@@ -52,6 +52,9 @@ export default function BookEditorPage() {
     setActiveTool,
     saveToStorage,
     saveStatus,
+    activePageIndex,
+    setActivePage,
+    selectedIds,
   } = useEditorStore();
 
   const [isInitialized, setIsInitialized] = React.useState(false);
@@ -78,8 +81,20 @@ export default function BookEditorPage() {
 
       const theme = getThemeById(rawBook.themeId);
 
+      // Ensure at least 5 starter pages are populated if rawPages is empty
+      let pageSources = rawPages;
+      if (!pageSources || pageSources.length === 0) {
+        pageSources = [
+          { id: `p-${rawBook.id}-1`, bookId: rawBook.id, position: 1, data: { bg: theme?.palette.bg || "#FAFAF8", layoutId: "L01", elements: [] } },
+          { id: `p-${rawBook.id}-2`, bookId: rawBook.id, position: 2, data: { bg: theme?.palette.bg || "#FAFAF8", layoutId: "L02", elements: [] } },
+          { id: `p-${rawBook.id}-3`, bookId: rawBook.id, position: 3, data: { bg: theme?.palette.bg || "#FAFAF8", layoutId: "L03", elements: [] } },
+          { id: `p-${rawBook.id}-4`, bookId: rawBook.id, position: 4, data: { bg: theme?.palette.bg || "#FAFAF8", layoutId: "L04", elements: [] } },
+          { id: `p-${rawBook.id}-5`, bookId: rawBook.id, position: 5, data: { bg: theme?.palette.bg || "#FAFAF8", layoutId: "L05", elements: [] } },
+        ];
+      }
+
       // Format into BookModel
-      const pages = rawPages.map((p, idx) => {
+      const pages = pageSources.map((p, idx) => {
         let elements: El[] = (p.data?.elements || []) as El[];
         // Pre-designed fun travel cover for Page 1 / Cover
         if (
@@ -249,27 +264,49 @@ export default function BookEditorPage() {
         return;
       }
 
-      // Arrow Key Nudges: 1mm normal, 10mm with Shift
-      const step = e.shiftKey ? 10 : 1;
-      if (e.key === "ArrowLeft") {
+      // Page Navigation with Left/Right Arrow keys (when no elements selected, or Alt+Arrow) or PageUp/PageDown
+      if (
+        (e.key === "ArrowLeft" && (selectedIds.length === 0 || e.altKey)) ||
+        e.key === "PageUp"
+      ) {
         e.preventDefault();
-        nudgeSelected(-step, 0);
+        setActivePage(Math.max(0, activePageIndex - 1));
         return;
       }
-      if (e.key === "ArrowRight") {
+
+      if (
+        (e.key === "ArrowRight" && (selectedIds.length === 0 || e.altKey)) ||
+        e.key === "PageDown"
+      ) {
         e.preventDefault();
-        nudgeSelected(step, 0);
+        const maxPage = (book?.pages.length || 1) - 1;
+        setActivePage(Math.min(maxPage, activePageIndex + 1));
         return;
       }
-      if (e.key === "ArrowUp") {
-        e.preventDefault();
-        nudgeSelected(0, -step);
-        return;
-      }
-      if (e.key === "ArrowDown") {
-        e.preventDefault();
-        nudgeSelected(0, step);
-        return;
+
+      // Arrow Key Nudges: 1mm normal, 10mm with Shift (when elements are selected)
+      if (selectedIds.length > 0) {
+        const step = e.shiftKey ? 10 : 1;
+        if (e.key === "ArrowLeft") {
+          e.preventDefault();
+          nudgeSelected(-step, 0);
+          return;
+        }
+        if (e.key === "ArrowRight") {
+          e.preventDefault();
+          nudgeSelected(step, 0);
+          return;
+        }
+        if (e.key === "ArrowUp") {
+          e.preventDefault();
+          nudgeSelected(0, -step);
+          return;
+        }
+        if (e.key === "ArrowDown") {
+          e.preventDefault();
+          nudgeSelected(0, step);
+          return;
+        }
       }
     };
 
@@ -289,6 +326,10 @@ export default function BookEditorPage() {
     bringToFront,
     sendToBack,
     nudgeSelected,
+    activePageIndex,
+    setActivePage,
+    selectedIds,
+    book,
   ]);
 
   // Debounced autosave (2 seconds after changes) as specified in Day 7 prompt
@@ -329,11 +370,36 @@ export default function BookEditorPage() {
       <div className="flex flex-1 overflow-hidden relative">
         <LeftRail />
         <main className="flex-1 h-full overflow-hidden relative bg-[#f4f4f2]">
+          {/* Floating Canvas Left Arrow Button */}
+          <button
+            type="button"
+            onClick={() => setActivePage(Math.max(0, activePageIndex - 1))}
+            disabled={activePageIndex === 0}
+            className="absolute left-3 top-1/2 -translate-y-1/2 z-20 p-2.5 rounded-full bg-surface/90 hover:bg-surface text-text border border-border shadow-md backdrop-blur transition-all hover:scale-110 active:scale-95 disabled:opacity-0 disabled:pointer-events-none"
+            title="Previous Page (ArrowLeft)"
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </button>
+
+          {/* Floating Canvas Right Arrow Button */}
+          <button
+            type="button"
+            onClick={() => {
+              const maxPage = (book?.pages.length || 1) - 1;
+              setActivePage(Math.min(maxPage, activePageIndex + 1));
+            }}
+            disabled={activePageIndex >= (book?.pages.length || 1) - 1}
+            className="absolute right-3 top-1/2 -translate-y-1/2 z-20 p-2.5 rounded-full bg-surface/90 hover:bg-surface text-text border border-border shadow-md backdrop-blur transition-all hover:scale-110 active:scale-95 disabled:opacity-0 disabled:pointer-events-none"
+            title="Next Page (ArrowRight)"
+          >
+            <ChevronRight className="h-4 w-4" />
+          </button>
+
           <PageCanvas />
         </main>
       </div>
 
-      {/* Bottom Page Strip (110px) */}
+      {/* Bottom Page Strip */}
       <PageStrip />
     </div>
   );

@@ -42,6 +42,7 @@ export default function KonvaStage() {
     undo,
     redo,
     nudgeSelected,
+    setActivePage,
   } = useEditorStore();
 
   const containerRef = React.useRef<HTMLDivElement | null>(null);
@@ -245,6 +246,21 @@ export default function KonvaStage() {
         e.preventDefault();
         deselectAll();
         return;
+      }
+
+      // Page Navigation with Left/Right Arrow keys (when no elements are selected)
+      if (selectedIds.length === 0) {
+        if (e.key === "ArrowLeft") {
+          e.preventDefault();
+          setActivePage(Math.max(0, activePageIndex - 1));
+          return;
+        }
+        if (e.key === "ArrowRight") {
+          e.preventDefault();
+          const maxP = (book?.pages.length || 1) - 1;
+          setActivePage(Math.min(maxP, activePageIndex + 1));
+          return;
+        }
       }
 
       // Arrow Key Nudges: 1mm normal, 10mm with Shift
